@@ -286,6 +286,34 @@ process_images <- function( doc_obj, package_dir ){
     which_match_id <- grepl( hl_ref[i], xml_attr(which_to_add, "embed"), fixed = TRUE )
     xml_attr(which_to_add[which_match_id], "r:embed") <- rep(rid, sum(which_match_id))
   }
+
+  ## process svg images
+  svg_nodes <- try(xml_find_all(
+    doc_obj$get(), "//asvg:svgBlip[@r:embed]",
+    ns = c("a"="http://schemas.openxmlformats.org/drawingml/2006/main",
+           r = "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+           asvg = "http://schemas.microsoft.com/office/drawing/2016/SVG/main")), silent = T)
+
+  if (!inherits(svg_nodes, "try-error")) {
+    svg_to_add <- svg_nodes[!grepl( "^rId[0-9]+$", xml_attr(svg_nodes, "embed") )]
+    svg_ref <- unique(xml_attr(svg_to_add, "embed"))
+
+    for(i in seq_along(svg_ref) ){
+      rid <- sprintf("rId%.0f", rel$get_next_id())
+
+      img_path <- file.path(package_dir, "word", "media")
+      dir.create(img_path, recursive = TRUE, showWarnings = FALSE)
+      file.copy(from = svg_ref[i], to = file.path(package_dir, "word", "media", basename(svg_ref[i])))
+
+      rel$add(
+        id = rid, type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        target = file.path("media", basename(svg_ref[i])))
+
+      svg_match_id <- grepl( svg_ref[i], xml_attr(svg_to_add, "embed"), fixed = TRUE )
+      xml_attr(svg_to_add[svg_match_id], "r:embed") <- rep(rid, sum(svg_match_id))
+    }
+  }
+
 }
 
 
