@@ -265,7 +265,7 @@ sanitize_images <- function(x){
     base_doc <- file.path(x$package_dir, "word")
     existing_img <- list.files(
       file.path(base_doc, "media"),
-      pattern = "\\.(png|jpg|jpeg|eps|emf)$",
+      pattern = "\\.(png|jpg|jpeg|eps|emf|svg)$",
       ignore.case = TRUE,
       recursive = TRUE, full.names = TRUE)
     existing_img <- gsub(paste0(base_doc, "/"), "", existing_img, fixed = TRUE)
