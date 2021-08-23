@@ -669,6 +669,8 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
 #' images in a PowerPoint form). With a Word document, the image will be
 #' added inside a paragraph.
 #' @param src image file path
+#' @param svg_src svg image file path, if including svg formatted image.
+#' must still specify \code{src} for non-svg image path as fallback for older versions of Word.
 #' @param width height in inches.
 #' @param height height in inches
 #' @param alt alternative text for images
@@ -678,7 +680,7 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
 #' @example examples/external_img.R
 #' @seealso [ph_with], [body_add], [fpar]
 #' @family run functions for reporting
-external_img <- function(src, width = .5, height = .2, alt = "") {
+external_img <- function(src, svg_src = NULL, width = .5, height = .2, alt = "") {
   # note: should it be vectorized
   check_src <- all(grepl("^rId", src)) || all(file.exists(src))
   if( !check_src ){
@@ -688,6 +690,7 @@ external_img <- function(src, width = .5, height = .2, alt = "") {
   class(src) <- c("external_img", "cot", "run")
   attr(src, "dims") <- list(width = width, height = height)
   attr(src, "alt") <- alt
+  attr(src, 'svg_src') <- svg_src
   src
 }
 
@@ -738,6 +741,8 @@ pic_pml <- function( left = 0, top = 0, width = 3, height = 3,
 }
 
 
+#' @section TODO: what happens if \code{x} is .emf AND \code{attr(x, 'svg_src')} is
+#' not \code{NULL}???
 #' @export
 to_wml.external_img <- function(x, add_ns = FALSE, ...) {
 
@@ -749,27 +754,51 @@ to_wml.external_img <- function(x, add_ns = FALSE, ...) {
   dims <- attr(x, "dims")
   width <- dims$width
   height <- dims$height
+  svg_src <- attr(x, "svg_src")
 
   filecp <- tempfile(fileext = gsub("(.*)(\\.[[:alnum:]]+)$", "\\2", as.character(x) ))
   file.copy(as.character(x), filecp)
 
-  paste0(open_tag,
-         "<w:rPr/><w:drawing xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">",
-         sprintf("<wp:extent cx=\"%.0f\" cy=\"%.0f\"/>", width * 12700*72, height * 12700*72),
-         "<wp:docPr id=\"\" name=\"\" descr=\"", attr(x, "alt"),"\"/>",
-         "<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" noChangeAspect=\"1\"/></wp:cNvGraphicFramePr>",
-         "<a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">",
-         "<pic:nvPicPr>",
-         "<pic:cNvPr id=\"\" name=\"\"/>",
-         "<pic:cNvPicPr><a:picLocks noChangeAspect=\"1\" noChangeArrowheads=\"1\"/>",
-         "</pic:cNvPicPr></pic:nvPicPr>",
-         "<pic:blipFill>",
-         sprintf("<a:blip r:embed=\"%s\"/>", filecp),
-         "<a:srcRect/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>",
-         "<pic:spPr bwMode=\"auto\"><a:xfrm><a:off x=\"0\" y=\"0\"/>",
-         sprintf("<a:ext cx=\"%.0f\" cy=\"%.0f\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/></pic:spPr>", width * 12700, height * 12700),
-         "</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"
-  )
+  file_type <- gsub("(.*)(\\.[a-zA-Z0-0]+)$", "\\2", filecp)
+
+  preamble <- c(open_tag,
+                "<w:rPr/><w:drawing xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">",
+                sprintf("<wp:extent cx=\"%.0f\" cy=\"%.0f\"/>", width * 12700*72, height * 12700*72),
+                "<wp:docPr id=\"\" name=\"\" descr=\"", attr(x, "alt"),"\"/>",
+                "<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" noChangeAspect=\"1\"/></wp:cNvGraphicFramePr>",
+                "<a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">",
+                "<pic:nvPicPr>",
+                "<pic:cNvPr id=\"\" name=\"\"/>",
+                "<pic:cNvPicPr><a:picLocks noChangeAspect=\"1\" noChangeArrowheads=\"1\"/>",
+                "</pic:cNvPicPr></pic:nvPicPr>",
+                "<pic:blipFill>")
+
+  end <- c("<a:srcRect/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>",
+           "<pic:spPr bwMode=\"auto\"><a:xfrm><a:off x=\"0\" y=\"0\"/>",
+           sprintf("<a:ext cx=\"%.0f\" cy=\"%.0f\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/></pic:spPr>", width * 12700, height * 12700),
+           "</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>")
+
+  if (!is.null(svg_src)) {
+    middle <- c(sprintf("<a:blip r:embed=\"%s\">", filecp),
+           "<a:extLst>",
+           "<a:ext uri=\"{96DAC541-7B7A-43D3-8B79-37D633B846F1}\">",
+           sprintf("<asvg:svgBlip r:embed=\"%s\" xmlns:asvg=\"http://schemas.microsoft.com/office/drawing/2016/SVG/main\"/>", svg_src),
+           "</a:ext>",
+           "</a:extLst>",
+           "</a:blip>")
+  } else if (file_type %in% ".emf") {
+    middle <- c(sprintf("<a:blip r:embed=\"%s\">", filecp),
+           "<a:extLst>",
+           "<a:ext uri=\"{28A0092B-C50C-407E-A947-70E740481C1C}\">",
+           "<a14:useLocalDpi xmlns:a14=\"http://schemas.microsoft.com/office/drawing/2010/main\" val=\"0\"/>",
+           "</a:ext>",
+           "</a:extLst>",
+           "</a:blip>")
+  } else {
+    middle <- sprintf("<a:blip r:embed=\"%s\"/>", filecp)
+  }
+
+  do.call(paste0, as.list(c(preamble, middle, end)))
 
 }
 

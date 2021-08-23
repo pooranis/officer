@@ -33,6 +33,8 @@ body_add_break <- function( x, pos = "after"){
 #' print(doc, target = tempfile(fileext = ".docx"))
 #' @family functions for adding content
 body_add_img <- function( x, src, style = NULL, width, height, pos = "after" ){
+  if (missing(width)) stop('width must be specified')
+  if (missing(height)) stop('height must be specified')
 
   if( is.null(style) )
     style <- x$default_styles$paragraph
@@ -44,20 +46,25 @@ body_add_img <- function( x, src, style = NULL, width, height, pos = "after" ){
       stop("package 'rsvg' is required to convert svg file to rasters")
     }
 
+    ## copy svg file to tempdir
+    new_svg_src <- tempfile(fileext = file_type )
+    file.copy(src, to = new_svg_src )
+
+    ## create fallback image for svg
     file <- tempfile(fileext = ".png")
     rsvg::rsvg_png(src, file = file)
     src <- file
     file_type <- ".png"
   }
 
-  new_src <- tempfile( fileext = file_type )
-  file.copy( src, to = new_src )
+  if (!exists("new_svg_src")) {
+    new_svg_src <- NULL
+  }
 
   style_id <- get_style_id(data = x$styles, style=style, type = "paragraph")
 
-  ext_img <- external_img(new_src, width = width, height = height)
+  ext_img <- external_img(src, svg_src = new_svg_src, width = width, height = height)
   xml_elt <- runs_to_p_wml(ext_img, add_ns = TRUE, style_id = style_id)
-
   body_add_xml(x = x, str = xml_elt, pos = pos)
 }
 
@@ -623,7 +630,8 @@ body_add.factor <- function(x, value, style = NULL, format_fun = as.character, .
 
 #' @export
 #' @describeIn body_add add a [fpar] object. These objects enable
-#' the creation of formatted paragraphs made of formatted chunks of text.
+#' the creation of formatted paragraphs made of formatted chunks of text. doesn't
+#' work with svg images.
 body_add.fpar <- function( x, value, style = NULL, ... ){
   img_src <- sapply(value$chunks, function(x){
     if( inherits(x, "external_img"))
@@ -708,9 +716,14 @@ body_add.external_img <- function( x, value, style = "Normal", ... ){
       stop("package 'rsvg' is required to convert svg file to rasters")
     }
 
+    ## copy svg file to tempdir
+    new_svg_src <- tempfile(fileext = file_type )
+    file.copy(value, to = new_svg_src )
+
+    ## create fallback image for svg
     file <- tempfile(fileext = ".png")
-    rsvg::rsvg_png(src, file = file)
-    value <- external_img(src = file,
+    rsvg::rsvg_png(value, file = file)
+    value <- external_img(src = file, svg_src = new_svg_src,
                           width = attr(value, "dims")$width,
                           height = attr(value, "dims")$height)
     file_type <- ".png"
