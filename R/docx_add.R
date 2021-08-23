@@ -30,6 +30,10 @@ body_add_break <- function( x, pos = "after"){
 #'   doc <- body_add_img(x = doc, src = img.file, height = 1.06, width = 1.39 )
 #' }
 #'
+#' ## also works with svg and will fallback to png for older versions of Word
+#' svg.file <- file.path( R.home("doc"), "html", "Rlogo.svg" )
+#' doc <- body_add_img(x = doc, src = svg.file, height = 4, width = 4 )
+#'
 #' print(doc, target = tempfile(fileext = ".docx"))
 #' @family functions for adding content
 body_add_img <- function( x, src, style = NULL, width, height, pos = "after" ){

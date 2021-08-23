@@ -669,8 +669,8 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
 #' images in a PowerPoint form). With a Word document, the image will be
 #' added inside a paragraph.
 #' @param src image file path
-#' @param svg_src svg image file path, if including svg formatted image.
-#' must still specify \code{src} for non-svg image path as fallback for older versions of Word.
+#' @param svg_src used internally.  \[svg image file path for adding svg to Word.
+#' must still specify \code{src} for non-svg image path as fallback for older versions of Word.\]
 #' @param width height in inches.
 #' @param height height in inches
 #' @param alt alternative text for images

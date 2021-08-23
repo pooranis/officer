@@ -18,3 +18,11 @@ an_fpar <- fpar(extimg, ftext(" is cool!", fp_t))
 x <- read_docx()
 x <- body_add(x, an_fpar)
 print(x, target = tempfile(fileext = ".docx"))
+
+# svg example ----
+svgfile <- file.path( R.home("doc"), "html", "Rlogo.svg" )
+ext_svg <- external_img(src = svgfile, height = 1.06/2, width = 1.39/2)
+x <- read_docx()
+x <- body_add(x, ext_svg)
+print(x, target = tempfile(fileext = ".docx"))
+

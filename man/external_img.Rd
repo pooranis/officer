@@ -9,8 +9,8 @@ external_img(src, svg_src = NULL, width = 0.5, height = 0.2, alt = "")
 \arguments{
 \item{src}{image file path}
 
-\item{svg_src}{svg image file path, if including svg formatted image.
-must still specify \code{src} for non-svg image path as fallback for older versions of Word.}
+\item{svg_src}{used internally.  [svg image file path for adding svg to Word.
+must still specify \code{src} for non-svg image path as fallback for older versions of Word.]}
 
 \item{width}{height in inches.}
 
@@ -56,6 +56,14 @@ an_fpar <- fpar(extimg, ftext(" is cool!", fp_t))
 x <- read_docx()
 x <- body_add(x, an_fpar)
 print(x, target = tempfile(fileext = ".docx"))
+
+# svg example ----
+svgfile <- file.path( R.home("doc"), "html", "Rlogo.svg" )
+ext_svg <- external_img(src = svgfile, height = 1.06/2, width = 1.39/2)
+x <- read_docx()
+x <- body_add(x, ext_svg)
+print(x, target = tempfile(fileext = ".docx"))
+
 }
 \seealso{
 \link{ph_with}, \link{body_add}, \link{fpar}
