@@ -107,7 +107,8 @@ be used in conjunction with the \verb{body_add_*} functions.
 \item \code{factor}: add a factor vector.
 
 \item \code{fpar}: add a \link{fpar} object. These objects enable
-the creation of formatted paragraphs made of formatted chunks of text.
+the creation of formatted paragraphs made of formatted chunks of text. doesn't
+work with svg images.
 
 \item \code{data.frame}: add a data.frame object with \code{\link[=block_table]{block_table()}}.
 

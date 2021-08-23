@@ -4,10 +4,13 @@
 \alias{external_img}
 \title{external image}
 \usage{
-external_img(src, width = 0.5, height = 0.2, alt = "")
+external_img(src, svg_src = NULL, width = 0.5, height = 0.2, alt = "")
 }
 \arguments{
 \item{src}{image file path}
+
+\item{svg_src}{svg image file path, if including svg formatted image.
+must still specify \code{src} for non-svg image path as fallback for older versions of Word.}
 
 \item{width}{height in inches.}
 

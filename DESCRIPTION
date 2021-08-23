@@ -18,6 +18,7 @@ Description: Access and manipulate 'Microsoft Word' and 'Microsoft PowerPoint' d
   lets add and remove images, tables and paragraphs of text in new or existing documents. 
   The package does not require any installation of Microsoft products to be able to write Microsoft 
   files.
+Note: This is a fork of CRAN officer package https://github.com/pooranis/officer.
 License: GPL-3
 Imports:
     R6,
