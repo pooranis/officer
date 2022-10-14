@@ -70,9 +70,10 @@ print(x, target = tempfile(fileext = ".docx"))
 # svg example pptx ----
 x <- read_pptx()
 x <- add_slide(x)
-x <- ph_with(x, ext_svg, location = ph_location_type(), alt_text = alt_text, height = 1.06, width = 1.39, use_loc_size=FALSE) # ph_location_type default is body
+x <- ph_with(x, ext_svg, location = ph_location_type(), alt_text = alt_text,
+  height = 1.06, width = 1.39, use_loc_size=FALSE) # ph_location_type default is body
 ppt <- tempfile(fileext = ".pptx")
-print(x, target = 'temp.pptx')
+print(x, target = ppt)
 
 
 
