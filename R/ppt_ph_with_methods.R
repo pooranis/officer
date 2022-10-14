@@ -433,7 +433,7 @@ ph_with.external_img <- function(x, value, location, use_loc_size = TRUE, ...){
     if (!requireNamespace("rsvg")){
       stop("package 'rsvg' is required to convert svg file to rasters")
     }
-
+    ## create fallback image for svg
     new_svg_src <- value
     file <- tempfile(fileext = ".png")
     rsvg::rsvg_png(as.character(value), file = file)

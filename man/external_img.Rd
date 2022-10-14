@@ -9,8 +9,7 @@ external_img(src, svg_src = NULL, width = 0.5, height = 0.2, alt = "")
 \arguments{
 \item{src}{image file path}
 
-\item{svg_src}{used internally.  [svg image file path for adding svg to Word.
-must still specify \code{src} for non-svg image path as fallback for older versions of Word.]}
+\item{svg_src}{used internally.  See note.}
 
 \item{width}{height in inches.}
 
@@ -25,6 +24,12 @@ in a PowerPoint slide or within a Word paragraph.
 The image is added as a shape in PowerPoint (it is not possible to mix text and
 images in a PowerPoint form). With a Word document, the image will be
 added inside a paragraph.
+}
+\note{
+For internal use (meaning maintaining the package):
+\code{svg_src} is the svg image file path for adding svg to Word/PPT.
+must still specify \code{src} for non-svg (png) image path as fallback for older versions of Word/PPT.
+User-facing code can just specify the svg file to \code{src}.
 }
 \section{usage}{
 
@@ -56,12 +61,20 @@ x <- read_docx()
 x <- body_add(x, an_fpar)
 print(x, target = tempfile(fileext = ".docx"))
 
-# svg example ----
+# svg example docx ----
 svgfile <- file.path( R.home("doc"), "html", "Rlogo.svg" )
 ext_svg <- external_img(src = svgfile, height = 1.06/2, width = 1.39/2)
 x <- read_docx()
 x <- body_add(x, ext_svg)
 print(x, target = tempfile(fileext = ".docx"))
+# svg example pptx ----
+x <- read_pptx()
+x <- add_slide(x)
+x <- ph_with(x, ext_svg, location = ph_location_type(), alt_text = alt_text, height = 1.06, width = 1.39, use_loc_size=FALSE) # ph_location_type default is body
+ppt <- tempfile(fileext = ".pptx")
+print(x, target = 'temp.pptx')
+
+
 
 }
 \seealso{
