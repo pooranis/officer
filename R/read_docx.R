@@ -68,6 +68,10 @@ read_docx <- function( path = NULL ){
                    .Names = c("package_dir"),
                    class = "rdocx")
 
+  obj$rel <- relationship$new()
+  obj$rel$feed_from_xml(file.path(package_dir, "_rels", ".rels"))
+
+  obj$doc_properties_custom <- read_custom_properties(package_dir)
   obj$doc_properties <- read_core_properties(package_dir)
   obj$content_type <- content_type$new( package_dir )
   obj$doc_obj <- docx_part$new(package_dir,
@@ -194,11 +198,16 @@ print.rdocx <- function(x, target = NULL, ...){
   x$content_type$save()
   x$footnotes$save()
 
+  x$rel$write(file.path(x$package_dir, "_rels", ".rels"))
+
   # save doc properties
   if(nrow(x$doc_properties$data) >0 ){
     x$doc_properties['modified','value'] <- format( Sys.time(), "%Y-%m-%dT%H:%M:%SZ")
     x$doc_properties['lastModifiedBy','value'] <- Sys.getenv("USER")
     write_core_properties(x$doc_properties, x$package_dir)
+  }
+  if(nrow(x$doc_properties_custom$data) >0 ){
+    write_custom_properties(x$doc_properties_custom, x$package_dir)
   }
   invisible(pack_folder(folder = x$package_dir, target = target ))
 }
@@ -318,7 +327,7 @@ process_images <- function( doc_obj, package_dir ){
 
 
 #' @export
-#' @title number of blocks inside an rdocx object
+#' @title Number of blocks inside an rdocx object
 #' @description return the number of blocks inside an rdocx object.
 #' This number also include the default section definition of a
 #' Word document - default Word section is an uninvisible element.
@@ -333,7 +342,7 @@ length.rdocx <- function( x ){
 }
 
 #' @export
-#' @title read Word styles
+#' @title Read 'Word' styles
 #' @description read Word styles and get results in
 #' a data.frame.
 #' @param x an rdocx object
@@ -352,46 +361,76 @@ styles_info <- function( x, type = c("paragraph", "character", "table", "numberi
 }
 
 #' @export
-#' @title read document properties
-#' @description read Word or PowerPoint document properties
+#' @title Read document properties
+#' @description Read Word or PowerPoint document properties
 #' and get results in a data.frame.
-#' @param x an \code{rdocx} or \code{rpptx} object
+#' @param x an `rdocx` or `rpptx` object
 #' @examples
 #' x <- read_docx()
 #' doc_properties(x)
 #' @return a data.frame
 #' @family functions for Word document informations
-doc_properties <- function( x ){
-  if( inherits(x, "rdocx"))
+#' @family functions for reading presentation informations
+doc_properties <- function(x) {
+  if (inherits(x, "rdocx")) {
     cp <- x$doc_properties
-  else if( inherits(x, "rpptx") || inherits(x, "rxlsx") ) cp <- x$core_properties
-  else stop("x should be a rpptx or a rdocx or a rxlsx object.")
+  } else if (inherits(x, "rpptx") || inherits(x, "rxlsx")) {
+    cp <- x$core_properties
+  } else {
+    stop("x should be a rpptx or a rdocx or a rxlsx object.")
+  }
 
-  out <- data.frame(tag = cp[, 'name'], value = cp[, 'value'], stringsAsFactors = FALSE)
+  properties_custom <- x$doc_properties_custom
+
+  out_custom <- data.frame(
+    tag = properties_custom[, "name"],
+    value = properties_custom[, "value"],
+    stringsAsFactors = FALSE
+  )
+  out <- data.frame(
+    tag = cp[, "name"],
+    value = cp[, "value"],
+    stringsAsFactors = FALSE
+  )
+  out <- rbind(out, out_custom)
   row.names(out) <- NULL
   out
 }
 
 #' @export
-#' @title set document properties
+#' @title Set document properties
 #' @description set Word or PowerPoint document properties. These are not visible
 #' in the document but are available as metadata of the document.
+#'
+#' Any character property can be added as a document property.
+#' It provides an easy way to insert arbitrary fields. Given the challenges
+#' that can be encountered with find-and-replace in word with officer, the
+#' use of document fields and quick text fields provides a much more robust
+#' approach to automatic document generation from R.
 #' @note
 #' The "last modified" and "last modified by" fields will be automatically be updated
 #' when the file is written.
 #' @param x an rdocx or rpptx object
 #' @param title,subject,creator,description text fields
 #' @param created a date object
+#' @param ... named arguments (names are field names), each element is a single
+#' character value specifying value associated with the corresponding field name.
+#' @param values a named list (names are field names), each element is a single
+#' character value specifying value associated with the corresponding field name.
+#' If `values` is provided, argument `...` will be ignored.
 #' @examples
 #' x <- read_docx()
 #' x <- set_doc_properties(x, title = "title",
 #'   subject = "document subject", creator = "Me me me",
 #'   description = "this document is empty",
-#'   created = Sys.time())
+#'   created = Sys.time(),
+#'   yoyo = "yok yok",
+#'   glop = "pas glop")
 #' x <- doc_properties(x)
 #' @family functions for Word document informations
 set_doc_properties <- function( x, title = NULL, subject = NULL,
-                                creator = NULL, description = NULL, created = NULL ){
+                                creator = NULL, description = NULL, created = NULL,
+                                ..., values = NULL){
 
   if( inherits(x, "rdocx"))
     cp <- x$doc_properties
@@ -404,6 +443,26 @@ set_doc_properties <- function( x, title = NULL, subject = NULL,
   if( !is.null(description) ) cp['description','value'] <- description
   if( !is.null(created) ) cp['created','value'] <- format( created, "%Y-%m-%dT%H:%M:%SZ")
 
+  if (is.null(values)) {
+    values <- list(...)
+  }
+
+  if (length(values) > 0) {
+    x$content_type$add_override(
+      setNames("application/vnd.openxmlformats-officedocument.custom-properties+xml",
+               "/docProps/custom.xml")
+    )
+    x$rel$add(id = paste0("rId", x$rel$get_next_id()),
+                type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+                target = "docProps/custom.xml")
+
+    custom_props <- x$doc_properties_custom
+    for(i in seq_along(values)) {
+      custom_props[names(values)[i], 'value'] <- values[[i]]
+    }
+    x$doc_properties_custom <- custom_props
+  }
+
   if( inherits(x, "rdocx"))
     x$doc_properties <- cp
   else x$core_properties <- cp
@@ -413,8 +472,8 @@ set_doc_properties <- function( x, title = NULL, subject = NULL,
 
 
 #' @export
-#' @title Word page layout
-#' @description get page width, page height and margins (in inches). The return values
+#' @title 'Word' page layout
+#' @description Get page width, page height and margins (in inches). The return values
 #' are those corresponding to the section where the cursor is.
 #' @param x an \code{rdocx} object
 #' @examples
@@ -441,7 +500,7 @@ docx_dim <- function(x){
 #' @export
 #' @title List Word bookmarks
 #' @description List bookmarks id that can be found in a
-#' Word document.
+#' 'Word' document.
 #' @param x an \code{rdocx} object
 #' @examples
 #' library(officer)
@@ -464,8 +523,8 @@ docx_bookmarks <- function(x){
 }
 
 #' @export
-#' @title Replace Styles in a Word Document
-#' @description Replace styles with others in a Word document. This function
+#' @title Replace styles in a 'Word' Document
+#' @description Replace styles with others in a 'Word' document. This function
 #' can be used for paragraph, run/character and table styles.
 #' @param x an rdocx object
 #' @param mapstyles a named list, names are the replacement style,
@@ -533,7 +592,7 @@ change_styles <- function( x, mapstyles ){
 
 
 #' @export
-#' @title body xml document
+#' @title Body xml document
 #' @description Get the body document as xml. This function
 #' is not to be used by end users, it has been implemented
 #' to allow other packages to work with officer.
@@ -547,7 +606,7 @@ docx_body_xml <- function( x ){
 }
 
 #' @export
-#' @title body xml document
+#' @title Body xml document
 #' @description Get the body document as xml. This function
 #' is not to be used by end users, it has been implemented
 #' to allow other packages to work with officer.

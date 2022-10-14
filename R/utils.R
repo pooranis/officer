@@ -18,7 +18,10 @@ read_xfrm <- function(nodeset, file, name){
                    cx = integer(0),
                    cy = integer(0),
                    rotation = integer(0),
-                   name = character(0) ))
+                   name = character(0),
+                   fld_id = character(0),
+                   fld_type = character(0)
+                   ))
   }
 
   ph <- xml_child(nodeset, "p:nvSpPr/p:nvPr/p:ph")
@@ -31,6 +34,9 @@ read_xfrm <- function(nodeset, file, name){
   ext <- xml_child(nodeset, "p:spPr/a:xfrm/a:ext")
   rot <- xml_child(nodeset, "p:spPr/a:xfrm")
 
+  fld_id <- xml_attr(xml_child(nodeset, "/p:txBody/a:p/a:fld"), "id")
+  fld_type <- xml_attr(xml_child(nodeset, "/p:txBody/a:p/a:fld"), "type")
+
   data.frame(stringsAsFactors = FALSE, type = type, id = id,
           ph_label = label,
           ph = as.character(ph),
@@ -40,6 +46,8 @@ read_xfrm <- function(nodeset, file, name){
           cx = as.integer(xml_attr(ext, "cx")),
           cy = as.integer(xml_attr(ext, "cy")),
           rotation = as.integer(xml_attr(rot, "rot")),
+          fld_id,
+          fld_type,
           name = name )
 }
 
@@ -70,8 +78,8 @@ fortify_master_xfrm <- function(master_xfrm){
 
   tmp_names <- names(master_xfrm)
 
-  old_ <- c("offx", "offy", "cx", "cy", "name")
-  new_ <- c("offx_ref", "offy_ref", "cx_ref", "cy_ref", "master_name")
+  old_ <- c("offx", "offy", "cx", "cy", "fld_id", "fld_type", "name")
+  new_ <- c("offx_ref", "offy_ref", "cx_ref", "cy_ref", "fld_id_ref", "fld_type_ref", "master_name")
   tmp_names[match(old_, tmp_names)] <- new_
   names(master_xfrm) <- tmp_names
   master_xfrm$id <- NULL
@@ -110,6 +118,8 @@ xfrmize <- function( slide_xfrm, master_xfrm ){
   x$offy_ref <- NULL
   x$cx_ref <- NULL
   x$cy_ref <- NULL
+  x$fld_id_ref <- NULL
+  x$fld_type_ref <- NULL
 
   x <- rbind(x, slide_xfrm_no_match, stringsAsFactors = FALSE)
   x[
@@ -238,19 +248,19 @@ is_windows <- function() {
   "windows" %in% .Platform$OS.type
 }
 
-is_office_doc_edited <- function(file){
-  is_docx <- grepl("\\.docx$", basename(file))
-  x <- gsub("\\.(docx|pptx)$", "", basename(file))
-  if( nchar(x) < 7)
-    z <- paste0("~$", x)
-  else if( nchar(x) < 8)
-    z <- paste0("~$", substring(x, 2))
-  else {
-    z <- paste0("~$", substring(x, 3))
-  }
-  z <- paste0(z, if(is_docx) ".docx" else ".pptx")
+is_office_doc_edited <- function(file) {
 
-  file.exists(file.path(dirname(file), z))
+  file_name <- sub("(.*)\\.(pptx|docx)$", "\\1", basename(file))
+
+  if (nchar(file_name) < 7 || endsWith(file, ".pptx")) {
+    edit_name <- paste0("~$", basename(file))
+  } else if (nchar(file_name) < 8) {
+    edit_name <- paste0("~$", substring(basename(file), 2))
+  } else {
+    edit_name <- paste0("~$", substring(basename(file), 3))
+  }
+
+  file.exists(file.path(dirname(file), edit_name))
 }
 
 # this is copied from package htmltools

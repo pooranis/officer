@@ -2,7 +2,7 @@
 % Please edit documentation in R/pptx_informations.R
 \name{annotate_base}
 \alias{annotate_base}
-\title{PowerPoint placeholder parameters annotation}
+\title{Placeholder parameters annotation}
 \usage{
 annotate_base(path = NULL, output_file = "annotated_layout.pptx")
 }
@@ -35,6 +35,7 @@ annotate_base(output_file = tempfile(fileext = ".pptx"))
 \seealso{
 Other functions for reading presentation informations: 
 \code{\link{color_scheme}()},
+\code{\link{doc_properties}()},
 \code{\link{layout_properties}()},
 \code{\link{layout_summary}()},
 \code{\link{length.rpptx}()},

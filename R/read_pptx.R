@@ -1,7 +1,8 @@
 #' @export
-#' @title open a connexion to a 'PowerPoint' file
-#' @description read and import a pptx file as an R object
+#' @title Create a 'PowerPoint' document object
+#' @description Read and import a pptx file as an R object
 #' representing the document.
+#'
 #' The function is called `read_pptx` because it allows you to initialize an
 #' object of class `rpptx` from an existing PowerPoint file. Content will be
 #' added to the existing presentation. By default, an empty document is used.
@@ -50,8 +51,15 @@ read_pptx <- function( path = NULL ){
                                       master_xfrm = obj$masterLayouts$xfrm() )
 
   obj$slide <- dir_slide$new( package_dir, obj$slideLayouts$get_xfrm_data() )
+  obj$notesSlide <- dir_notesSlide$new(package_dir)
+  obj$notesMaster <- dir_notesMaster$new(package_dir, slide_master$new("ppt/notesMasters"))
   obj$content_type <- content_type$new( package_dir )
   obj$core_properties <- read_core_properties(package_dir)
+  obj$doc_properties_custom <- read_custom_properties(package_dir)
+
+  obj$rel <- relationship$new()
+  obj$rel$feed_from_xml(file.path(package_dir, "_rels", ".rels"))
+
 
   obj$cursor = obj$slide$length()
   class(obj) <- "rpptx"
@@ -71,9 +79,10 @@ read_table_style <- function(path){
              stringsAsFactors = FALSE )
 }
 
-#' write a 'PowerPoint' file.
-#'
-#'
+#' @title Write a 'PowerPoint' file.
+#' @description Write a 'PowerPoint' file
+#' with an object of class 'rpptx' (created with
+#' [read_pptx()]).
 #' @param x an rpptx object
 #' @param target path to the pptx file to write
 #' @param ... unused
@@ -100,14 +109,22 @@ print.rpptx <- function(x, target = NULL, ...){
     stop(target , " is already edited.",
          " You must close the document in order to be able to write the file.")
 
+  x$rel$write(file.path(x$package_dir, "_rels", ".rels"))
+
   x$presentation$save()
   x$content_type$save()
 
   x$slide$save_slides()
 
+  x$notesSlide$save_slides()
+
   x$core_properties['modified','value'] <- format( Sys.time(), "%Y-%m-%dT%H:%M:%SZ")
   x$core_properties['lastModifiedBy','value'] <- Sys.getenv("USER")
   write_core_properties(x$core_properties, x$package_dir)
+
+  if(nrow(x$doc_properties_custom$data) >0 ){
+    write_custom_properties(x$doc_properties_custom, x$package_dir)
+  }
 
   invisible(pack_folder(folder = x$package_dir, target = target ))
 }

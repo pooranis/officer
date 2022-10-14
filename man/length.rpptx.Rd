@@ -2,7 +2,7 @@
 % Please edit documentation in R/pptx_informations.R
 \name{length.rpptx}
 \alias{length.rpptx}
-\title{number of slides}
+\title{Number of slides}
 \usage{
 \method{length}{rpptx}(x)
 }
@@ -22,6 +22,7 @@ length(my_pres)
 Other functions for reading presentation informations: 
 \code{\link{annotate_base}()},
 \code{\link{color_scheme}()},
+\code{\link{doc_properties}()},
 \code{\link{layout_properties}()},
 \code{\link{layout_summary}()},
 \code{\link{plot_layout_properties}()},

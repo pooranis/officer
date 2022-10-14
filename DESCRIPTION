@@ -1,7 +1,7 @@
 Package: officer
 Type: Package
 Title: Manipulation of Microsoft Word and PowerPoint Documents
-Version: 0.4.0.002
+Version: 0.4.4.010
 Authors@R: c(
     person("David", "Gohel", role = c("aut", "cre"),
     email = "david.gohel@ardata.fr"),
@@ -10,7 +10,11 @@ Authors@R: c(
     person("Anton", "Victorson", role = "ctb", email = 'anton@victorson.se',comment = "fixes xml structures"),
     person("Jon", "Calder", role = "ctb", email = 'jonmcalder@gmail.com', comment = "update vignettes"),
     person("John", "Harrold", role = "ctb", email = 'john.m.harrold@gmail.com', comment = "function annotate_base"),
-    person("John", "Muschelli", role = "ctb", email = 'muschellij2@gmail.com', comment = "google doc compatibility")
+    person("John", "Muschelli", role = "ctb", email = 'muschellij2@gmail.com', comment = "google doc compatibility"),
+    person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X", "function as.matrix.rpptx")),
+    person("Nikolai", "Beck", role = "ctb", email = 'beck.nikolai@gmail.com', comment = "set speaker notes for .pptx documents"),
+    person("Stefan", "Moog", role = "ctb", email = 'moogs@gmx.de', comment = "added functionality to set shape geometry and outline"),
+    person("Greg", "Leleu", role = "ctb", email = 'gregoire.leleu@gmail.com', comment = "fields functionality in ppt")
     )
 Description: Access and manipulate 'Microsoft Word' and 'Microsoft PowerPoint' documents from R. 
   The package focuses on tabular and graphical reporting from R; it also provides two functions
@@ -28,11 +32,10 @@ Imports:
     xml2 (>= 1.1.0)
 URL: https://ardata-fr.github.io/officeverse/, https://davidgohel.github.io/officer/
 Encoding: UTF-8
-BugReports: https://github.com/davidgohel/officer/issues
-RoxygenNote: 7.1.1
+BugReports: https://github.com/davidgohel/officer/discussions
+RoxygenNote: 7.2.1
 Roxygen: list(markdown = TRUE)
 Suggests: testthat, devEMF, ggplot2,
     rmarkdown,
     base64enc,
     knitr, rsvg
-VignetteBuilder: knitr

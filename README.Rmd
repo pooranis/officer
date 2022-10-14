@@ -18,9 +18,8 @@ knitr::opts_chunk$set(
 
 [![R build status](https://github.com/davidgohel/officer/workflows/R-CMD-check/badge.svg)](https://github.com/davidgohel/officer/actions)
 [![version](https://www.r-pkg.org/badges/version/officer)](https://CRAN.R-project.org/package=officer)
-[![codecov test coverage](https://codecov.io/gh/davidgohel/officer/branch/master/graph/badge.svg)](https://codecov.io/gh/davidgohel/officer)
 
-<a href="https://github.com/davidgohel/flextable"><img src="man/figures/logo.png" alt="flextable logo" align="right" /></a>
+<a href="https://github.com/davidgohel/officer"><img src="man/figures/logo.png" alt="officer logo" align="right" /></a>
 The officer package lets R users manipulate Word (`.docx`) and 
 PowerPoint (`*.pptx`) documents. In short, one can add images, 
 tables and text into documents from R. An initial document can 
@@ -52,11 +51,6 @@ The package provides functions to add R outputs into a Word document:
 * field codes: add Word field codes inside paragraphs. Field codes is an old 
   feature of MS Word to create calculated elements such as tables of contents, 
   automatic numbering and hyperlinks.
-
-In a Word document, one can use cursor functions to reach the
-beginning or end of a document, or a particular paragraph containing a
-given text. This *cursor* concept has been implemented to make the
-post processing of files easier.
 
 File generation is performed with the `print` function.
 
@@ -105,6 +99,10 @@ The package [rvg](https://github.com/davidgohel/rvg) brings an API to produce ni
 The package [mschart](https://github.com/ardata-fr/mschart) combined with `officer` can 
 produce native office charts in PowerPoint and Word documents.
 
+### Advance Word documents with R Markdown with package `officedown`
+
+The package [officedown](https://ardata-fr.github.io/officeverse/) facilitates the formatting of Microsoft Word documents produced by R Markdown documents.
+
 
 ## Installation
 
@@ -134,7 +132,7 @@ Anyone getting involved in this package agrees to our [Code of Conduct](https://
 
 ### Bug reports
 
-When you file a [bug report](https://github.com/davidgohel/officer/issues), please spend some time making it easy for me to follow and reproduce. The more time you spend on making the bug report coherent, the more time I can dedicate to investigate the bug as opposed to the bug report.
+When you file a [bug report](https://github.com/davidgohel/officer/discussions/categories/q-a), please spend some time making it easy for me to follow and reproduce. The more time you spend on making the bug report coherent, the more time I can dedicate to investigate the bug as opposed to the bug report.
 
 ### Contributing to the package development
 

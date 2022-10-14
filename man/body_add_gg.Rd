@@ -2,9 +2,18 @@
 % Please edit documentation in R/docx_add.R
 \name{body_add_gg}
 \alias{body_add_gg}
-\title{add ggplot}
+\title{Add a 'ggplot' in a 'Word' document}
 \usage{
-body_add_gg(x, value, width = 6, height = 5, res = 300, style = "Normal", ...)
+body_add_gg(
+  x,
+  value,
+  width = 6,
+  height = 5,
+  res = 300,
+  style = "Normal",
+  scale = 1,
+  ...
+)
 }
 \arguments{
 \item{x}{an rdocx object}
@@ -19,10 +28,12 @@ body_add_gg(x, value, width = 6, height = 5, res = 300, style = "Normal", ...)
 
 \item{style}{paragraph style}
 
+\item{scale}{Multiplicative scaling factor, same as in ggsave}
+
 \item{...}{Arguments to be passed to png function.}
 }
 \description{
-add a ggplot as a png image into an rdocx object
+add a ggplot as a png image into an rdocx object.
 }
 \examples{
 if( require("ggplot2") ){

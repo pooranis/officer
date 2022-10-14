@@ -2,7 +2,7 @@
 % Please edit documentation in R/ph_location.R
 \name{fortify_location}
 \alias{fortify_location}
-\title{eval a location on the current slide}
+\title{Eval a location on the current slide}
 \usage{
 fortify_location(x, doc, ...)
 }
@@ -33,6 +33,7 @@ Other functions for officer extensions:
 \code{\link{docx_reference_img}()},
 \code{\link{get_reference_value}()},
 \code{\link{opts_current_table}()},
+\code{\link{to_html}()},
 \code{\link{to_pml}()},
 \code{\link{to_wml}()},
 \code{\link{wml_link_images}()}

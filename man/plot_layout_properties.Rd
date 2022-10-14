@@ -2,7 +2,7 @@
 % Please edit documentation in R/pptx_informations.R
 \name{plot_layout_properties}
 \alias{plot_layout_properties}
-\title{Plot slide layout properties}
+\title{Slide layout properties plot}
 \usage{
 plot_layout_properties(x, layout = NULL, master = NULL, labels = TRUE)
 }
@@ -31,6 +31,7 @@ plot_layout_properties( x = x, layout = "Two Content" )
 Other functions for reading presentation informations: 
 \code{\link{annotate_base}()},
 \code{\link{color_scheme}()},
+\code{\link{doc_properties}()},
 \code{\link{layout_properties}()},
 \code{\link{layout_summary}()},
 \code{\link{length.rpptx}()},

@@ -1,3 +1,87 @@
+# officer 0.4.4
+
+## New features
+
+- `fp_par()` now have argument `word_style`
+- add support for `ln` for `external_img` provided by Angus Moore
+- add word_title and word_description to table properties (`prop_table()`). 
+These values can be used as alternative text for Word tables. These values 
+can also be set as "knitr" chunk options.
+
+## Issues
+
+- fix for `is_office_doc_edited()` provided by Andrew Tungate.
+- `tab.lp` is no more set to null with usual rmarkdown outputs
+- autofit was never used when outputting prop_table to xml
+
+## Changes
+
+- Function `opts_current_table()` read some Quarto values related to 
+captions in order to reuse them later.
+
+# officer 0.4.3
+
+## New features
+
+* `set_doc_properties()` now supports any character property. 
+It provides an easy way to insert arbitrary fields. Given the challenges 
+that can be encountered with find-and-replace in word with officer, the 
+use of document fields and quick text fields provides a much more robust 
+approach to automatic document generation from R.
+* Adding support for fields (e.g. auto slide number) in Powerpoint (#429), 
+see `empty_content()`.
+* add functionality to set shape geometry and outline, 
+see `ph_location(geam=...)`.
+
+## Changes
+
+- drop shortcuts$slip_in_tableref() and shortcuts$slip_in_plotref()
+- defunct slip_in_column_break() and slip_in_xml()
+- defunct slip_in_text()
+- remove defunct functions `slip_in_img()`, `ph_add_fpar()`, 
+`ph_add_par()` and `ph_add_text()`
+
+
+# officer 0.4.2
+
+## New features
+
+* new as.matrix method for pptx to automatically extract one or all matrices
+from the file.
+* simple ([character()] and [block_list()]) speaker notes can 
+now be added to a pptx presentation
+
+## Changes
+
+* deprecate slip_in_column_break and slip_in_text
+* doc: use 'title case' for the titles of function manuals
+* closing issues tab, opening discussion 
+# officer 0.4.1
+
+## Issues
+
+* fix a bug in `ph_with.external_img()` that could be seen when `alt_text` was null
+* change default value for `tab.cap.sep` from ":" to ": "
+* fix an issue with `body_end_section_columns()` that is expected as 'continuous'.
+
+## New features
+
+* new parameter `scale` added to `ph_with.gg`, `body_add_gg` and `body_add.gg` 
+to set the scale of ggplot outputs (like in ggsave).
+* new function `set_autonum_bookmark()` to recycle an object 
+made by `run_autonum()` by changing the bookmark value.
+* add `tnd` argument to prefix a autonumber with the 
+title number (i.e. 4.3-2 for figure 2 of chapter 4.3).
+* `unordered_list()` now supports `level_list` < 1 which 
+will be interpreted as 'no bullet'.
+* add support to knitr table options `tab.cap.fp_text` to let format caption prefix 
+in function `opts_current_table()`.
+
+## Deprecation 
+
+* deprecate almost all `slip_in*()` and `ph_add*()` functions. Functions `ftext()` and related 
+used with `fpar()` are to be used as replacement.
+
 # officer 0.4.0
 
 ## New features
@@ -9,6 +93,10 @@ Function `fp_text()` has also been adapted, it now supports NA meaning
 to not write the attributes as in `fp_text_lite()`.
 * new function `run_footnote` to add footnotes in a Word document (it 
 also makes possible to deprecate totally slip_in* functions).
+
+## Issues
+
+* fix a bug when creating the XML of table properties for Word documents
 
 # officer 0.3.19
 

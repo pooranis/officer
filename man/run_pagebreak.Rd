@@ -2,7 +2,7 @@
 % Please edit documentation in R/ooxml_run_objects.R
 \name{run_pagebreak}
 \alias{run_pagebreak}
-\title{page break for Word}
+\title{Page break for 'Word'}
 \usage{
 run_pagebreak()
 }
@@ -18,7 +18,6 @@ officedown.
 }
 
 \examples{
-
 fp_t <- fp_text(font.size = 12, bold = TRUE)
 an_fpar <- fpar("let's add a break page", run_pagebreak(), ftext("and blah blah!", fp_t))
 

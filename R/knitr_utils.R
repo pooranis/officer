@@ -95,22 +95,74 @@ knitr_opts_current <- function(x, default = FALSE){
   x
 }
 
-
 #' @export
-#' @title Get table options in a 'knitr' context
-#' @description Get options for table rendering.
+#' @title Table options in a 'knitr' context
+#' @description Get options for table rendering in a 'knitr'
+#' context. It should not be used by the end user, but
+#' its documentation should be read as a place where
+#' table options are documented when 'knitr' is used.
 #'
-#' It should not be used by the end user.
 #' The function is a utility to facilitate the retrieval of table
-#' options supported by the 'flextable', 'officedown' and of
-#' course 'officer' packages.
-#' @return a list with following elements:
+#' options supported by the 'flextable', 'officedown' and 'officer' packages.
+#'
+#' These options should be set with `knitr::opts_chunk$set()`.
+#' The names and expected values are listed in the following sections.
+#'
+#' @section knitr chunk options for table captions:
+#'
+#' | **label**                                        |    **name**     | **value**  |
+#' |:-------------------------------------------------|:---------------:|:----------:|
+#' | caption id/bookmark                              | tab.id          |    NULL    |
+#' | caption                                          | tab.cap         |    NULL    |
+#' | display table caption on top of the table or not | tab.topcaption  |    TRUE    |
+#' | caption table sequence identifier.               | tab.lp          |   "tab:"   |
+#'
+#' @section knitr chunk options for Word table captions:
+#'
+#' | **label**                                               |    **name**     | **value**                 |
+#' |:--------------------------------------------------------|:---------------:|:-------------------------:|
+#' | Word stylename to use for table captions.               | tab.cap.style   |            NULL           |
+#' | prefix for numbering chunk (default to   "Table ").     | tab.cap.pre     |           Table           |
+#' | suffix for numbering chunk (default to   ": ").         | tab.cap.sep     |            " :"           |
+#' | title number depth                                      | tab.cap.tnd     |              0            |
+#' | separator to use between title number and table number. | tab.cap.tns     |             "-"           |
+#' | caption prefix formatting properties                    | tab.cap.fp_text | fp_text_lite(bold = TRUE) |
+#'
+#' @section knitr chunk options for Word tables:
+#'
+#' | **label**                                                     |       **name**      | **value**  |
+#' |:--------------------------------------------------------------|:-------------------:|:----------:|
+#' | the Word stylename to use for tables                          | tab.style           |    NULL    |
+#' | autofit' or 'fixed' algorithm.                                | tab.layout          |  "autofit" |
+#' | value of the preferred width of the table in percent (base 1).| tab.width           |      1     |
+#' | Alternative title text                                        | tab.alt.title       |    NULL    |
+#' | Alternative description text                                  | tab.alt.description |    NULL    |
+#'
+#' @section knitr chunk options for data.frame with officedown:
+#'
+#' | **label**                                                     |    **name**     | **value**  |
+#' |:--------------------------------------------------------------|:---------------:|:----------:|
+#' | apply or remove formatting from the first row in the table    | first_row       |    TRUE    |
+#' | apply or remove formatting from the first column in the table | first_column    |    FALSE   |
+#' | apply or remove formatting from the last row in the table     | last_row        |    FALSE   |
+#' | apply or remove formatting from the last column in the table  | last_column     |    FALSE   |
+#' | don't display odd and even rows                               | no_hband        |    TRUE    |
+#' | don't display odd and even columns                            | no_vband        |    TRUE    |
+#'
+#' @return a list
+#'
+#' @section returned elements:
 #'
 #' * cap.style (default: NULL)
 #' * cap.pre (default: "Table ")
 #' * cap.sep (default: ":")
+#' * cap.tnd (default: 0)
+#' * cap.tns (default: "-")
+#' * cap.fp_text (default: `fp_text_lite(bold = TRUE)`)
 #' * id (default: NULL)
 #' * cap (default: NULL)
+#' * alt.title (default: NULL)
+#' * alt.description (default: NULL)
 #' * topcaption (default: TRUE)
 #' * style (default: NULL)
 #' * tab.lp (default: "tab:")
@@ -125,13 +177,67 @@ knitr_opts_current <- function(x, default = FALSE){
 #' @family functions for officer extensions
 #' @keywords internal
 opts_current_table <- function() {
+
+  is_quarto <- isTRUE(knitr::opts_knit$get("quarto.version") > numeric_version("0"))
+  is_bookdown <- isTRUE(knitr::opts_knit$get('bookdown.internal.label'))
+
+  if (is_bookdown) {
+    tab.lp <- knitr_opts_current("tab.lp", default = "tab:")
+  } else if (is_quarto) {
+    tab.lp <- "tab:"
+  } else {
+    tab.lp <- knitr_opts_current("tab.lp", default = NULL)
+  }
+  if (is_quarto) {
+    tab.topcaption <- knitr_opts_current("tbl-cap-location", default = "top") %in% "top"
+  } else {
+    tab.topcaption <- knitr_opts_current("tab.topcaption", default = TRUE)
+  }
+
+  if (is_quarto) {
+    tab.cap.pre <- knitr_opts_current("tbl-title", default = "Table")
+    tab.cap.sep <- knitr_opts_current("title-delim", default = ":")
+  } else {
+    tab.cap.pre <- knitr_opts_current("tab.cap.pre", default = "Table")
+    tab.cap.sep <- knitr_opts_current("tab.cap.sep", default = ":")
+  }
+  tab.cap.pre <- paste0(tab.cap.pre, " ")
+  tab.cap.sep <- paste0(tab.cap.sep, " ")
+
+  if (is_quarto) {
+    tab.cap <- knitr_opts_current("tbl-cap", default = NULL)
+  } else {
+    tab.cap <- knitr_opts_current("tab.cap", default = NULL)
+  }
+
+  if (is_quarto) {
+    tab.id <- knitr_opts_current("label", default = NULL)
+    if(!is.null(tab.id)) {
+      if (grepl("^unnamed\\-chunk", tab.id)) {
+        tab.id <- NULL
+      }
+    }
+  } else if (is_bookdown) {
+    tab.id <- knitr_opts_current("label", default = NULL)
+    tab.id <- knitr_opts_current("tab.id", default = tab.id)
+  } else {
+    tab.id <- knitr_opts_current("tab.id", default = NULL)
+  }
+
+  if (is_quarto) {
+    if(is.null(tab.cap) && !is.null(tab.id)) {
+      stop("if a label (", tab.id, ") is defined, chunk option `tbl-cap` should also be defined.")
+    }
+  }
+
   tab.cap.style <- knitr_opts_current("tab.cap.style", default = NULL)
-  tab.cap.pre <- knitr_opts_current("tab.cap.pre", default = "Table ")
-  tab.cap.sep <- knitr_opts_current("tab.cap.sep", default = ":")
-  tab.cap <- knitr_opts_current("tab.cap", default = NULL)
-  tab.topcaption <- knitr_opts_current("tab.topcaption", default = TRUE)
-  tab.id <- knitr_opts_current("tab.id", default = NULL)
-  tab.lp <- knitr_opts_current("tab.lp", default = "tab:")
+  tab.alt.title <- knitr_opts_current("tab.alt.title", default = NULL)
+  tab.alt.description <- knitr_opts_current("tab.alt.description", default = NULL)
+
+  tab.cap.tnd <- knitr_opts_current("tab.cap.tnd", default = 0)
+  tab.cap.tns <- knitr_opts_current("tab.cap.tns", default = "-")
+  tab.cap.fp_text <- knitr_opts_current("tab.cap.fp_text", default = fp_text_lite(bold = TRUE))
+
   tab.style <- knitr_opts_current("tab.style", default = NULL)
   tab.layout <- knitr_opts_current("tab.layout", default = "autofit")
   tab.width <- knitr_opts_current("tab.width", default = 1)
@@ -147,7 +253,12 @@ opts_current_table <- function() {
     cap.style = tab.cap.style,
     cap.pre = tab.cap.pre,
     cap.sep = tab.cap.sep,
+    cap.tnd = tab.cap.tnd,
+    cap.tns = tab.cap.tns,
+    cap.fp_text = tab.cap.fp_text,
     id = tab.id,
+    alt.title = tab.alt.title,
+    alt.description = tab.alt.description,
     topcaption = tab.topcaption,
     cap = tab.cap,
     style = tab.style,

@@ -2,16 +2,19 @@
 % Please edit documentation in R/defunct.R
 \name{officer-defunct}
 \alias{officer-defunct}
-\alias{ph_with_gg_at}
-\alias{ph_with_table_at}
-\alias{ph_with_text}
+\alias{slip_in_seqfield}
+\alias{slip_in_column_break}
+\alias{slip_in_xml}
+\alias{slip_in_text}
 \title{Defunct Functions in Package officer}
 \usage{
-ph_with_gg_at(...)
+slip_in_seqfield(...)
 
-ph_with_table_at(...)
+slip_in_column_break(...)
 
-ph_with_text(...)
+slip_in_xml(...)
+
+slip_in_text(...)
 }
 \arguments{
 \item{...}{unused arguments}
@@ -20,9 +23,11 @@ ph_with_text(...)
 Defunct Functions in Package officer
 }
 \details{
-\code{ph_with()} is replaced by \code{ph_with.gg}.
+\code{slip_in_seqfield()} is replaced by \code{run_word_field()}.
 
-\code{ph_with_table_at()} is replaced by \code{ph_with.data.frame}.
+\code{slip_in_column_break()} is replaced by \code{run_columnbreak()}.
 
-\code{ph_with_text()} is replaced by \code{ph_with.character}.
+\code{slip_in_xml()} is replaced by \code{fpar()}.
+
+\code{slip_in_text()} is replaced by \code{fpar()}.
 }

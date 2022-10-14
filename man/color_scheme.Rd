@@ -2,7 +2,7 @@
 % Please edit documentation in R/pptx_informations.R
 \name{color_scheme}
 \alias{color_scheme}
-\title{color scheme}
+\title{Color scheme of a PowerPoint file}
 \usage{
 color_scheme(x)
 }
@@ -10,7 +10,8 @@ color_scheme(x)
 \item{x}{an rpptx object}
 }
 \description{
-get master layout color scheme into a data.frame.
+Get the color scheme of a
+'PowerPoint' master layout into a data.frame.
 }
 \examples{
 x <- read_pptx()
@@ -19,6 +20,7 @@ color_scheme ( x = x )
 \seealso{
 Other functions for reading presentation informations: 
 \code{\link{annotate_base}()},
+\code{\link{doc_properties}()},
 \code{\link{layout_properties}()},
 \code{\link{layout_summary}()},
 \code{\link{length.rpptx}()},

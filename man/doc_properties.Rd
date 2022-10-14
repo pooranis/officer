@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_docx.R
 \name{doc_properties}
 \alias{doc_properties}
-\title{read document properties}
+\title{Read document properties}
 \usage{
 doc_properties(x)
 }
@@ -13,7 +13,7 @@ doc_properties(x)
 a data.frame
 }
 \description{
-read Word or PowerPoint document properties
+Read Word or PowerPoint document properties
 and get results in a data.frame.
 }
 \examples{
@@ -27,5 +27,16 @@ Other functions for Word document informations:
 \code{\link{length.rdocx}()},
 \code{\link{set_doc_properties}()},
 \code{\link{styles_info}()}
+
+Other functions for reading presentation informations: 
+\code{\link{annotate_base}()},
+\code{\link{color_scheme}()},
+\code{\link{layout_properties}()},
+\code{\link{layout_summary}()},
+\code{\link{length.rpptx}()},
+\code{\link{plot_layout_properties}()},
+\code{\link{slide_size}()},
+\code{\link{slide_summary}()}
 }
 \concept{functions for Word document informations}
+\concept{functions for reading presentation informations}

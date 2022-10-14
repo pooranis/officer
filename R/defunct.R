@@ -1,27 +1,35 @@
 #' @name officer-defunct
 #' @title Defunct Functions in Package officer
-NULL
-
 #' @export
 #' @rdname officer-defunct
-#' @details `ph_with()` is replaced by `ph_with.gg`.
+#' @details `slip_in_seqfield()` is replaced by `run_word_field()`.
 #' @param ... unused arguments
-ph_with_gg_at <- function(...){
-  .Defunct("ph_with")
+slip_in_seqfield <- function(...){
+  .Defunct("run_word_field")
 }
 
 #' @export
 #' @rdname officer-defunct
-#' @details `ph_with_table_at()` is replaced by `ph_with.data.frame`.
+#' @details `slip_in_column_break()` is replaced by `run_columnbreak()`.
 #' @param ... unused arguments
-ph_with_table_at <- function(...){
-  .Defunct("ph_with")
+slip_in_column_break <- function(...){
+  .Defunct("run_columnbreak")
 }
 
 #' @export
 #' @rdname officer-defunct
-#' @details `ph_with_text()` is replaced by `ph_with.character`.
+#' @details `slip_in_xml()` is replaced by `fpar()`.
 #' @param ... unused arguments
-ph_with_text <- function(...){
-  .Defunct("ph_with")
+slip_in_xml <- function(...){
+  .Defunct("fpar()")
 }
+
+#' @export
+#' @rdname officer-defunct
+#' @details `slip_in_text()` is replaced by `fpar()`.
+#' @param ... unused arguments
+slip_in_text <- function(...){
+  .Defunct("fpar()")
+}
+
+

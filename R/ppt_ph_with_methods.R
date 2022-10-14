@@ -1,5 +1,5 @@
 #' @export
-#' @title add objects into a new shape on the current slide
+#' @title Add objects on the current slide
 #' @description add object into a new shape in the current slide. This
 #' function is able to add all supported outputs to a presentation. See
 #' section **Methods (by class)** to see supported outputs.
@@ -140,11 +140,14 @@ ph_with.character <- function(x, value, location, ...){
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                width = location$width, height = location$height,
                label = location$ph_label, ph = location$ph,
-               rot = location$rotation, bg = location$bg)
+               rot = location$rotation, bg = location$bg,
+               ln = location$ln, geom = location$geom)
+
   pars <- paste0("<a:p><a:r><a:rPr/><a:t>", htmlEscapeCopy(value), "</a:t></a:r></a:p>", collapse = "")
   xml_elt <- paste0( psp_ns_yes, new_ph,
                      "<p:txBody><a:bodyPr/><a:lstStyle/>",
                      pars, "</p:txBody></p:sp>" )
+
   node <- as_xml_document(xml_elt)
 
   xml_add_child(xml_find_first(slide$get(), "//p:spTree"), node)
@@ -166,7 +169,8 @@ ph_with.numeric <- function(x, value, location, format_fun = format, ...){
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                width = location$width, height = location$height,
                label = location$ph_label, ph = location$ph,
-               rot = location$rotation, bg = location$bg)
+               rot = location$rotation, bg = location$bg,
+               ln = location$ln, geom = location$geom)
 
   pars <- paste0("<a:p><a:r><a:rPr/><a:t>", htmlEscapeCopy(value), "</a:t></a:r></a:p>", collapse = "")
   xml_elt <- paste0( psp_ns_yes, new_ph,
@@ -192,7 +196,8 @@ ph_with.factor <- function(x, value, location, ...){
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                width = location$width, height = location$height,
                label = location$ph_label, ph = location$ph,
-               rot = location$rotation, bg = location$bg)
+               rot = location$rotation, bg = location$bg,
+               ln = location$ln, geom = location$geom)
 
   pars <- paste0("<a:p><a:r><a:rPr/><a:t>", htmlEscapeCopy(value), "</a:t></a:r></a:p>", collapse = "")
   xml_elt <- paste0( psp_ns_yes, new_ph,
@@ -257,11 +262,13 @@ ph_with.block_list <- function(x, value, location, level_list = integer(0), ...)
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                width = location$width, height = location$height,
                label = location$ph_label, ph = location$ph,
-               rot = location$rotation, bg = location$bg)
+               rot = location$rotation, bg = location$bg,
+               ln = location$ln, geom = location$geom)
 
   xml_elt <- paste0( psp_ns_yes, new_ph,
                      "<p:txBody><a:bodyPr/><a:lstStyle/>",
                      pars, "</p:txBody></p:sp>" )
+
   node <- as_xml_document(xml_elt)
 
   xml_add_child(xml_find_first(slide$get(), "//p:spTree"), node)
@@ -283,7 +290,8 @@ ph_with.unordered_list <- function(x, value, location, ...){
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                width = location$width, height = location$height,
                label = location$ph_label, ph = location$ph,
-               rot = location$rotation, bg = location$bg)
+               rot = location$rotation, bg = location$bg,
+               ln = location$ln, geom = location$geom)
 
   xml_elt <- paste0( psp_ns_yes, new_ph,
           "<p:txBody><a:bodyPr/><a:lstStyle/>", p, "</p:txBody></p:sp>" )
@@ -324,7 +332,8 @@ ph_with.data.frame <- function(x, value, location, header = TRUE,
     bt, left = location$left, top = location$top,
     width = location$width, height = location$height,
     label = location$ph_label, ph = location$ph,
-    rot = location$rotation, bg = location$bg)
+    rot = location$rotation, bg = location$bg,
+    ln = location$ln, geom = location$geom)
 
   value <- as_xml_document(xml_elt)
   xml_add_child(xml_find_first(slide$get(), "//p:spTree"), value)
@@ -338,7 +347,8 @@ ph_with.data.frame <- function(x, value, location, header = TRUE,
 #' current slide. Use package \code{rvg} for more advanced graphical features.
 #' @param res resolution of the png image in ppi
 #' @param alt_text Alt-text for screen-readers
-ph_with.gg <- function(x, value, location, res = 300, alt_text, ...){
+#' @param scale Multiplicative scaling factor, same as in ggsave
+ph_with.gg <- function(x, value, location, res = 300, alt_text, scale = 1, ...){
   location_ <- fortify_location(location, doc = x)
   slide <- x$slide$get_slide(x$cursor)
   if( !requireNamespace("ggplot2") )
@@ -350,7 +360,7 @@ ph_with.gg <- function(x, value, location, res = 300, alt_text, ...){
 
   stopifnot(inherits(value, "gg") )
   file <- tempfile(fileext = ".png")
-  png(filename = file, width = width, height = height, units = "in", res = res, ...)
+  png(filename = file, width = width*scale, height = height*scale, units = "in", res = res, ...)
   print(value)
   dev.off()
   on.exit(unlink(file))
@@ -435,7 +445,9 @@ ph_with.external_img <- function(x, value, location, use_loc_size = TRUE, ...){
   xml_str <- pic_pml(left = location$left, top = location$top,
                        width = width, height = height,
                        label = location$ph_label, ph = location$ph,
-                       rot = location$rotation, bg = location$bg, src = new_src, alt_text = attr(value, "alt"))
+                       rot = location$rotation, bg = location$bg,
+                       src = new_src, alt_text = attr(value, "alt"),
+                       ln = location$ln)
 
   slide$reference_img(src = new_src, dir_name = file.path(x$package_dir, "ppt/media"))
   xml_elt <- fortify_pml_images(x, xml_str)
@@ -471,8 +483,17 @@ ph_with.empty_content <- function( x, value, location, ... ){
   new_ph <- sh_props_pml(left = location$left, top = location$top,
                        width = location$width, height = location$height,
                        label = location$ph_label, ph = location$ph,
-                       rot = location$rotation, bg = location$bg)
-  xml_elt <- paste0( psp_ns_yes, new_ph, "</p:sp>" )
+                       rot = location$rotation, bg = location$bg,
+                       ln = location$ln, geom = location$geom)
+
+  if (is.na(location$fld_id)) {
+    xml_elt <- paste0( psp_ns_yes, new_ph, "</p:sp>" )
+  } else {
+    pars <- paste0("<a:p><a:fld id=\"", location$fld_id, "\" type = \"", location$fld_type, "\"><a:rPr/><a:t>", x$cursor, "</a:t></a:fld></a:p>", collapse = "")
+    xml_elt <- sprintf(paste0( psp_ns_yes, new_ph,
+                               "<p:txBody><a:bodyPr/><a:lstStyle/>",
+                               pars, "</p:txBody></p:sp>" ))
+  }
   node <- as_xml_document(xml_elt)
 
   xml_add_child(xml_find_first(slide$get(), "//p:spTree"), node)

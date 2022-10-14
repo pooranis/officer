@@ -32,6 +32,7 @@ to_pml <- function(x, add_ns = FALSE, ...) {
 #' to HTML. The result is a string.
 #' @param x object
 #' @param ... Arguments to be passed to methods
+#' @family functions for officer extensions
 #' @keywords internal
 to_html <- function(x, ...) {
   UseMethod("to_html")
@@ -49,7 +50,7 @@ bookmark <- function(id, str) {
 
 # ftext -----
 #' @export
-#' @title formatted chunk of text
+#' @title Formatted chunk of text
 #' @description Format a chunk of text with text formatting properties (bold, color, ...).
 #' The function allows you to create pieces of text formatted the way you want.
 #' @param text text value, a single character value
@@ -118,25 +119,30 @@ to_html.ftext <- function(x, ...) {
 
 # Word computed field ----
 #' @export
-#' @title seqfield
-#' @description Create a Word computed field.
+#' @title 'Word' computed field
+#' @description Create a 'Word' computed field.
 #' @note
 #' In the previous version, this function was called `run_seqfield`
 #' but the name was wrong and should have been `run_word_field`.
 #' @inheritSection ftext usage
-#' @param field,seqfield computed field string (`seqfield` will be
-#' totally superseded by `field` in the future).
+#' @param field Value for a "Word Computed Field" as a string.
+#' @param seqfield deprecated in favor of `field`.
 #' @param prop formatting text properties returned by [fp_text].
 #' @examples
 #' run_word_field(field = "PAGE  \\* MERGEFORMAT")
 #' run_word_field(field = "Date \\@ \"MMMM d yyyy\"")
 #' @family run functions for reporting
 #' @family Word computed fields
-run_word_field <- function(field, prop = NULL, seqfield = field) {
+run_word_field <- function(field, prop = NULL, seqfield = NULL) {
+
+  if(!is.null(seqfield)) {
+    field <- seqfield
+    message("`seqfield` argument is deprecated in favor of `field`")
+  }
   z <- list(
-    seqfield = seqfield, pr = prop
+    field = field, pr = prop
   )
-    class(z) <- c("run_seqfield", "run")
+    class(z) <- c("run_word_field", "run")
   z
 }
 
@@ -145,7 +151,7 @@ run_word_field <- function(field, prop = NULL, seqfield = field) {
 run_seqfield <- run_word_field
 
 #' @export
-to_wml.run_seqfield <- function(x, add_ns = FALSE, ...) {
+to_wml.run_word_field <- function(x, add_ns = FALSE, ...) {
 
   pr <- if(!is.null(x$pr)) rpr_wml(x$pr) else "<w:rPr/>"
 
@@ -158,7 +164,7 @@ to_wml.run_seqfield <- function(x, add_ns = FALSE, ...) {
   xml_elt_2 <- paste0(
     wr_ns_yes,
     pr,
-    sprintf("<w:instrText xml:space=\"preserve\" w:dirty=\"true\">%s</w:instrText>", x$seqfield),
+    sprintf("<w:instrText xml:space=\"preserve\" w:dirty=\"true\">%s</w:instrText>", x$field),
     "</w:r>"
   )
   xml_elt_3 <- paste0(
@@ -175,7 +181,7 @@ to_wml.run_seqfield <- function(x, add_ns = FALSE, ...) {
 # autonum ----
 
 #' @export
-#' @title auto number
+#' @title Auto number
 #' @description Create an autonumbered chunk, i.e. a string
 #' representation of a sequence, each item will be numbered.
 #' These runs can also be bookmarked and be used later for
@@ -194,15 +200,25 @@ to_wml.run_seqfield <- function(x, add_ns = FALSE, ...) {
 #' @param start_at If not NULL, it must be a positive integer, it
 #' specifies the new number to use, at which number the auto
 #' numbering will restart.
+#' @param tnd *title number depth*, a positive integer (only applies if positive)
+#' that specify the depth (or heading of level *depth*) to use for prefixing
+#' the caption number with this last reference number. For example, setting
+#' `tnd=2` will generate numbered captions like '4.3-2' (figure 2 of
+#' chapter 4.3).
+#' @param tns separator to use between title number and table
+#' number. Default is "-".
 #' @examples
 #' run_autonum()
 #' run_autonum(seq_id = "fig", pre_label = "fig. ")
 #' run_autonum(seq_id = "tab", pre_label = "Table ", bkm = "anytable")
+#' run_autonum(seq_id = "tab", pre_label = "Table ", bkm = "anytable",
+#'   tnd = 2, tns= " ")
 #' @family run functions for reporting
 #' @family Word computed fields
 run_autonum <- function(seq_id = "table", pre_label = "Table ", post_label = ": ",
                         bkm = NULL, bkm_all = FALSE, prop = NULL,
-                        start_at = NULL) {
+                        start_at = NULL,
+                        tnd = 0, tns = "-") {
   bkm <- check_bookmark_id(bkm)
   z <- list(
     seq_id = seq_id,
@@ -211,11 +227,32 @@ run_autonum <- function(seq_id = "table", pre_label = "Table ", post_label = ": 
     bookmark = bkm,
     bookmark_all = bkm_all,
     pr = prop,
-    start_at = start_at
+    start_at = start_at,
+    tnd = tnd, tns = tns
   )
   class(z) <- c("run_autonum", "run")
 
   z
+}
+
+#' @export
+#' @title Update bookmark of an autonumber run
+#' @description This function lets recycling a object
+#' made by [run_autonum()] by changing the bookmark value. This
+#' is useful to avoid calling `run_autonum()` several times
+#' because of many tables.
+#' @param x an object of class [run_autonum()]
+#' @param bkm bookmark id to associate with autonumber run.
+#' Value can only be made of alpha numeric characters, ':', -' and '_'.
+#' @examples
+#' z <- run_autonum(seq_id = "tab", pre_label = "Table ",
+#'   bkm = "anytable")
+#' set_autonum_bookmark(z, bkm = "anothertable")
+#' @seealso [run_autonum()]
+set_autonum_bookmark <- function(x, bkm = NULL){
+  stopifnot(inherits(x, "run_autonum"))
+  x$bookmark <- bkm
+  x
 }
 
 #' @export
@@ -232,8 +269,18 @@ to_wml.run_autonum <- function(x, add_ns = FALSE, ...) {
     seq_str <- paste(seq_str, "\\r", as.integer(x$start_at))
   }
 
-  sqf <- run_word_field(seqfield = seq_str, prop = x$pr)
+  sqf <- run_word_field(field = seq_str, prop = x$pr)
   sf_str <- to_wml(sqf)
+
+  if(x$tnd > 0){
+    z <- paste0(
+      to_wml(run_word_field(field = paste0("STYLEREF ", x$tnd, " \\r"), prop = x$pr)),
+      to_wml(ftext(x$tns, prop = x$pr))
+    )
+    sf_str <- paste0(z, sf_str)
+  }
+
+
   if(!is.null(x$bookmark)){
     if(x$bookmark_all){
       out <- paste0(
@@ -254,7 +301,7 @@ to_wml.run_autonum <- function(x, add_ns = FALSE, ...) {
 # reference ----
 
 #' @export
-#' @title reference
+#' @title Cross reference
 #' @description Create a representation of a reference
 #' @param id reference id, a string
 #' @param prop formatting text properties returned by [fp_text].
@@ -276,14 +323,14 @@ run_reference <- function(id, prop = NULL) {
 
 #' @export
 to_wml.run_reference <- function(x, add_ns = FALSE, ...) {
-  out <- to_wml(run_seqfield(seqfield = paste0(" REF ", x$id, " \\h "), prop = x$pr))
+  out <- to_wml(run_word_field(field = paste0(" REF ", x$id, " \\h "), prop = x$pr))
   out
 }
 
 # hyperlink text ----
 
 #' @export
-#' @title formatted chunk of text with hyperlink
+#' @title Formatted chunk of text with hyperlink
 #' @description Format a chunk of text with text formatting properties (bold, color, ...),
 #' the chunk is associated with an hyperlink.
 #' @param text text value, a single character value
@@ -341,19 +388,21 @@ to_pml.hyperlink_ftext <- function(x, add_ns = FALSE, ...) {
 
 #' @export
 to_html.hyperlink_ftext <- function(x, ...) {
-  out <- sprintf("<span style=\"%s\">%s</span>",
-                 if(!is.null(x$pr)) rpr_css(x$pr) else "",
-                 htmlEscapeCopy(x$value))
-  sprintf("<a href=\"%s\">%s</a>", x$href, out)
-  out
-}
 
+  if(!is.null(x$pr)) {
+    rpr_css <- paste0(" style=\"", rpr_css(x$pr), "\"")
+  } else {
+    rpr_css <- ""
+  }
+
+  sprintf("<a href=\"%s\"><span%s></span></a>", x$href, rpr_css)
+}
 
 
 # bookmark ----
 
 #' @export
-#' @title bookmark for Word
+#' @title Bookmark for 'Word'
 #' @description Add a bookmark on a run object.
 #' @param bkm bookmark id to associate with run. Value can only be
 #' made of alpha numeric characters, '-' and '_'.
@@ -397,12 +446,16 @@ to_wml.run_bookmark <- function(x, add_ns = FALSE, ...) {
 # breaks ----
 
 #' @export
-#' @title page break for Word
+#' @title Page break for 'Word'
 #' @description Object representing a page break for a Word document.
 #' @inheritSection ftext usage
 #' @examples
+#' fp_t <- fp_text(font.size = 12, bold = TRUE)
+#' an_fpar <- fpar("let's add a break page", run_pagebreak(), ftext("and blah blah!", fp_t))
 #'
-#' @example examples/run_pagebreak.R
+#' x <- read_docx()
+#' x <- body_add(x, an_fpar)
+#' print(x, target = tempfile(fileext = ".docx"))
 #' @family run functions for reporting
 run_pagebreak <- function() {
   z <- list()
@@ -417,8 +470,8 @@ to_wml.run_pagebreak <- function(x, add_ns = FALSE, ...) {
 }
 
 #' @export
-#' @title column break
-#' @description Create a representation of a column break
+#' @title Column break for 'Word'
+#' @description Create a representation of a column break.
 #' @inheritSection ftext usage
 #' @examples
 #' run_columnbreak()
@@ -437,13 +490,18 @@ to_wml.run_columnbreak <- function(x, add_ns = FALSE, ...) {
 }
 
 #' @export
-#' @title page break for Word
-#' @description Object representing a line break for a Word document. The
-#' result must be used within a call to [fpar].
+#' @title Page break for 'Word'
+#' @description Object representing a line break
+#' for a Word document. The result must be used
+#' within a call to [fpar].
 #' @inheritSection ftext usage
 #' @examples
+#' fp_t <- fp_text(font.size = 12, bold = TRUE)
+#' an_fpar <- fpar("let's add a line break", run_linebreak(), ftext("and blah blah!", fp_t))
 #'
-#' @example examples/run_linebreak.R
+#' x <- read_docx()
+#' x <- body_add(x, an_fpar)
+#' print(x, target = tempfile(fileext = ".docx"))
 #' @family run functions for reporting
 run_linebreak <- function() {
   z <- list()
@@ -462,7 +520,7 @@ to_wml.run_linebreak <- function(x, add_ns = FALSE, ...) {
 inch_to_tweep <- function(x) round(x * 72 * 20, digits = 0)
 
 #' @export
-#' @title page size object
+#' @title Page size object
 #' @description The function creates a representation of the dimensions of a page. The
 #' dimensions are defined by length, width and orientation. If the orientation is
 #' in landscape mode then the length becomes the width and the width becomes the length.
@@ -495,7 +553,7 @@ to_wml.page_size <- function(x, add_ns = FALSE, ...) {
 }
 
 #' @export
-#' @title section columns
+#' @title Section columns
 #' @description The function creates a representation of the columns of a section.
 #' @param widths columns widths in inches. If 3 values, 3 columns
 #' will be produced.
@@ -529,7 +587,7 @@ to_wml.section_columns <- function(x, add_ns = FALSE, ...) {
 }
 
 #' @export
-#' @title page margins object
+#' @title Page margins object
 #' @description The margins for each page of a sectionThe function creates a representation of the dimensions of a page. The
 #' dimensions are defined by length, width and orientation. If the orientation is
 #' in landscape mode then the length becomes the width and the width becomes the length.
@@ -562,7 +620,7 @@ to_wml.page_mar <- function(x, add_ns = FALSE, ...) {
 docx_section_type <- c("continuous", "evenPage", "nextColumn", "nextPage", "oddPage")
 
 #' @export
-#' @title section properties
+#' @title Section properties
 #' @description A section is a grouping of blocks (ie. paragraphs and tables)
 #' that have a set of properties that define pages on which the text will appear.
 #'
@@ -652,7 +710,7 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
     ">",
     if(!is.null(x$page_margins)) to_wml(x$page_margins),
     if(!is.null(x$page_size)) to_wml(x$page_size),
-    if(!is.null(x$type)) "<w:type w:val=\"", x$type, "\"/>",
+    if(!is.null(x$type)) paste0("<w:type w:val=\"", x$type, "\"/>"),
     if(!is.null(x$section_columns)) to_wml(x$section_columns) else "<w:cols/>",
     "</w:sectPr>"
   )
@@ -661,7 +719,7 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
 
 # external_img ----
 #' @export
-#' @title external image
+#' @title External image
 #' @description Wraps an image in an object that can then be embedded
 #' in a PowerPoint slide or within a Word paragraph.
 #'
@@ -676,8 +734,26 @@ to_wml.prop_section <- function(x, add_ns = FALSE, ...) {
 #' @param alt alternative text for images
 #' @inheritSection ftext usage
 #' @examples
+#' # wrap r logo with external_img ----
+#' srcfile <- file.path( R.home("doc"), "html", "logo.jpg" )
+#' extimg <- external_img(src = srcfile, height = 1.06/2,
+#'                        width = 1.39/2)
 #'
-#' @example examples/external_img.R
+#' # pptx example ----
+#' doc <- read_pptx()
+#' doc <- add_slide(doc)
+#' doc <- ph_with(x = doc, value = extimg,
+#'                location = ph_location_type(type = "body"),
+#'                use_loc_size = FALSE )
+#' print(doc, target = tempfile(fileext = ".pptx"))
+#'
+#' fp_t <- fp_text(font.size = 20, color = "red")
+#' an_fpar <- fpar(extimg, ftext(" is cool!", fp_t))
+#'
+#' # docx example ----
+#' x <- read_docx()
+#' x <- body_add(x, an_fpar)
+#' print(x, target = tempfile(fileext = ".docx"))
 #' @seealso [ph_with], [body_add], [fpar]
 #' @family run functions for reporting
 external_img <- function(src, svg_src = NULL, width = .5, height = .2, alt = "") {
@@ -706,14 +782,17 @@ as.data.frame.external_img <- function( x, ... ){
 
 
 pic_pml <- function( left = 0, top = 0, width = 3, height = 3,
-                     bg = "transparent", rot = 0, label = "", ph = "<p:ph/>", src, alt_text = ""){
+                     bg = "transparent", rot = 0, label = "",
+                     ph = "<p:ph/>", src, alt_text = "",
+                     ln = sp_line(lwd = 0, linecmpd = "solid", lineend = "rnd")){
 
   if( !is.null(bg) && !is.color( bg ) )
     stop("bg must be a valid color.", call. = FALSE )
 
   bg_str <- solid_fill_pml(bg)
+  ln_str <- ln_pml(ln)
 
-  if (missing(alt_text)) alt_text <- ""
+  if (missing(alt_text) || is.null(alt_text)) alt_text <- ""
 
 
   xfrm_str <- a_xfrm_str(left = left, top = top, width = width, height = height, rot = rot)
@@ -733,10 +812,10 @@ pic_pml <- function( left = 0, top = 0, width = 3, height = 3,
     <p:nvPr>%s</p:nvPr>
   </p:nvPicPr>
   %s
-  <p:spPr>%s<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom>%s</p:spPr>
+  <p:spPr>%s<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom>%s%s</p:spPr>
 </p:pic>
 "
-  sprintf(str, label, alt_text, ph, blipfill, xfrm_str, bg_str )
+  sprintf(str, label, alt_text, ph, blipfill, xfrm_str, bg_str, ln_str)
 
 }
 
@@ -869,7 +948,7 @@ to_wml.run_footnoteref <- function(x, add_ns = FALSE, ...) {
 
 # run_footnote ----
 #' @export
-#' @title Word footnote
+#' @title Footnote for 'Word'
 #' @description Wraps a footnote in an object that can then be inserted
 #' as a run/chunk with [fpar()] or within an R Markdown document.
 #' @param x a set of blocks to be used as footnote content returned by

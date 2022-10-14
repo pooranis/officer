@@ -2,7 +2,7 @@
 % Please edit documentation in R/ph_location.R
 \name{ph_location_label}
 \alias{ph_location_label}
-\title{location of a named placeholder}
+\title{Location of a named placeholder}
 \usage{
 ph_location_label(ph_label, newlabel = NULL, ...)
 }
@@ -37,7 +37,6 @@ This label can then be reused by other functions such as \code{ph_location_label
 It can be set with argument \code{newlabel}.
 }
 \examples{
-
 # ph_location_label demo ----
 
 doc <- read_pptx()
@@ -54,8 +53,6 @@ doc <- ph_with(doc, "This is a title",
   location = ph_location_label(ph_label = "Title 1") )
 
 print(doc, target = tempfile(fileext = ".pptx"))
-
-
 }
 \seealso{
 Other functions for placeholder location: 

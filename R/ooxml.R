@@ -37,20 +37,24 @@ runs_to_p_wml <- function(..., add_ns = FALSE, style_id = NULL){
 }
 
 sh_props_pml <- function( left = 0, top = 0, width = 3, height = 3,
-                          bg = "transparent", rot = 0, label = "", ph = "<p:ph/>"){
+                          bg = "transparent", rot = 0, label = "", ph = "<p:ph/>",
+                          ln = sp_line(lwd = 0, linecmpd = "solid", lineend = "rnd"), geom = NULL) {
 
   if( !is.null(bg) && !is.color( bg ) )
     stop("bg must be a valid color.", call. = FALSE )
 
   bg_str <- solid_fill_pml(bg)
+  ln_str <- ln_pml(ln)
+  geom_str <- prst_geom_pml(geom)
 
   xfrm_str <- a_xfrm_str(left = left, top = top, width = width, height = height, rot = rot)
   if( is.null(ph) || is.na(ph)){
     ph = "<p:ph/>"
   }
 
-  str <- "<p:nvSpPr><p:cNvPr id=\"0\" name=\"%s\"/><p:cNvSpPr><a:spLocks noGrp=\"1\"/></p:cNvSpPr><p:nvPr>%s</p:nvPr></p:nvSpPr><p:spPr>%s%s</p:spPr>"
-  sprintf(str, label, ph, xfrm_str, bg_str )
+  str <- "<p:nvSpPr><p:cNvPr id=\"0\" name=\"%s\"/><p:cNvSpPr><a:spLocks noGrp=\"1\"/></p:cNvSpPr><p:nvPr>%s</p:nvPr></p:nvSpPr><p:spPr>%s%s%s%s</p:spPr>"
+
+  sprintf(str, label, ph, xfrm_str, geom_str, bg_str, ln_str)
 
 }
 
@@ -119,6 +123,74 @@ solid_fill_pml <- function(bg){
     bg_str <- solid_fill(bg)
   }
   bg_str
+}
+
+# geom ----
+
+prst_geom_pml <- function(x) {
+  geom_str <- ""
+  if (!is.null(x)) {
+    x <- check_set_geom(x)
+    tagname <- paste0("a:prstGeom")
+    geom_str <- sprintf("<%s prst=\"%s\"><a:avLst/></%s>", tagname, x, tagname)
+  }
+  geom_str
+}
+
+# line ----
+
+ln_pml <- function(x) {
+  ln_str <- ""
+  if (!is.null(x)) {
+    color_ <- ""
+    if(is_transparent(x$color) || x$lwd < .001) {
+      color_ <- "<a:noFill/>"
+    } else {
+      color_ <- solid_fill(x$color)
+    }
+
+    dash_ <- dash_pml(x$lty)
+    join_ <- linejoin_pml(x$linejoin)
+    head_ <- lineend_pml(x$headend, "head")
+    tail_ <- lineend_pml(x$tailend, "tail")
+
+    ln_str <- sprintf(
+      paste0("<a:ln w=\"%s\" cap=\"%s\" cmpd=\"%s\">",
+             color_,
+             dash_,
+             join_,
+             head_,
+             tail_,
+             "</a:ln>"),
+      12700 * x$lwd, x$lineend, x$linecmpd)
+
+  }
+  ln_str
+}
+
+lineend_pml <- function(x, side) {
+  lineend_str <- ""
+  if (!is.null(x)) {
+    tagname <- paste0("a:", side, "End")
+    lineend_str <- sprintf("<%s type=\"%s\" w=\"%s\" len=\"%s\"/>", tagname, x$type, x$width, x$length)
+  }
+  lineend_str
+}
+
+dash_pml <- function(x) {
+  dash_str <- ""
+  if (!is.null(x)) {
+    dash_str <- sprintf("<a:prstDash val=\"%s\"/>", x)
+  }
+  dash_str
+}
+
+linejoin_pml <- function(x) {
+  linejoin_str <- ""
+  if (!is.null(x)) {
+    linejoin_str <- sprintf("<a:%s/>", x)
+  }
+  linejoin_str
 }
 
 # border ----
@@ -225,10 +297,12 @@ ppr_css <- function(x){
 
   paddings <- sprintf("padding-top:%.0fpt;padding-bottom:%.0fpt;padding-left:%.0fpt;padding-right:%.0fpt;",
                       x$padding.top, x$padding.bottom, x$padding.left, x$padding.right)
+  ls <- formatC(x$line_spacing, format = "f", digits = 2, decimal.mark = ".", drop0trailing = TRUE )
+  line_spacing <- sprintf("line-height: %s;", ls )
 
   shading.color <- sprintf("background-color:%s;", css_color(x$shading.color))
 
-  paste0("margin:0pt;", text.align, borders, paddings,
+  paste0("margin:0pt;", text.align, borders, paddings, line_spacing,
          shading.color)
 }
 
@@ -236,6 +310,11 @@ ppr_wml <- function(x){
 
   if("justify" %in% x$text.align ){
     x$text.align  <- "both";
+  }
+  pstyle <- ""
+  if(!is.null(x$word_style)) {
+    word_style_id <- gsub("[^a-zA-Z0-9]", "", x$word_style)
+    pstyle <- sprintf("<w:pStyle w:val=\"%s\"/>", word_style_id)
   }
   text_align_ <- sprintf("<w:jc w:val=\"%s\"/>", x$text.align)
   keep_with_next <- ""
@@ -260,6 +339,7 @@ ppr_wml <- function(x){
   }
 
   paste0("<w:pPr>",
+         pstyle,
          text_align_,
          keep_with_next,
          borders_,
@@ -502,8 +582,9 @@ tcpr_pml <- function(x){
   bt <- border_pml(x$border.top, side = "T")
   bl <- border_pml(x$border.left, side = "L")
   br <- border_pml(x$border.right, side = "R")
+
   pml_attrs <- paste0(text.direction, vertical.align, margins)
-  paste0("<a:tcPr ", pml_attrs, ">", bl, br, bt, bb,
+  paste0("<a:tcPr", pml_attrs, ">", bl, br, bt, bb,
          background.color, "</a:tcPr>" )
 }
 
@@ -520,12 +601,24 @@ tcpr_wml <- function(x){
   bl <- border_wml(x$border.left, side = "left")
   br <- border_wml(x$border.right, side = "right")
 
-
   margin.bottom <- sprintf("<w:bottom w:w=\"%.0f\" w:type=\"dxa\"/>", x$margin.bottom * 20 )
   margin.top <- sprintf("<w:top w:w=\"%.0f\" w:type=\"dxa\"/>", x$margin.top * 20 )
   margin.left <- sprintf("<w:left w:w=\"%.0f\" w:type=\"dxa\"/>", x$margin.left * 20 )
   margin.right <- sprintf("<w:right w:w=\"%.0f\" w:type=\"dxa\"/>", x$margin.right * 20 )
-  paste0("<w:tcPr><w:tcBorders>", bb, bt, bl, br, "</w:tcBorders>",
+
+  rowspan <- ""
+  if (x$rowspan>1) {
+    rowspan <- paste0("<w:gridSpan w:val=\"", x$rowspan,"\"/>")
+  }
+  colspan <- ""
+  if (x$colspan>1) {
+    colspan <- "<w:vMerge w:val=\"restart\"/>"
+  } else if (x$colspan<1) {
+    colspan <- "<w:vMerge/>"
+  }
+
+  paste0("<w:tcPr>", rowspan, colspan,
+         "<w:tcBorders>", bb, bt, bl, br, "</w:tcBorders>",
                          background.color,
                          "<w:tcMar>", margin.top, margin.bottom, margin.left, margin.right, "</w:tcMar>",
                          text.direction, vertical.align, "</w:tcPr>" )

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pptx_informations.R
 \name{layout_properties}
 \alias{layout_properties}
-\title{slide layout properties}
+\title{Slide layout properties}
 \usage{
 layout_properties(x, layout = NULL, master = NULL)
 }
@@ -14,7 +14,7 @@ layout_properties(x, layout = NULL, master = NULL)
 \item{master}{master layout name where \code{layout} is located}
 }
 \description{
-get information about a particular slide layout
+Get information about a particular slide layout
 into a data.frame.
 }
 \examples{
@@ -28,6 +28,7 @@ layout_properties ( x = x )
 Other functions for reading presentation informations: 
 \code{\link{annotate_base}()},
 \code{\link{color_scheme}()},
+\code{\link{doc_properties}()},
 \code{\link{layout_summary}()},
 \code{\link{length.rpptx}()},
 \code{\link{plot_layout_properties}()},

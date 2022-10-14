@@ -25,8 +25,8 @@ get_ph_loc <- function(x, layout, master, type, position_right, position_top, id
   if( nrow(props) > 1) {
     warning("more than a row have been selected")
   }
-  props <- props[, c("offx", "offy", "cx", "cy", "ph_label", "ph", "type", "rotation")]
-  names(props) <- c("left", "top", "width", "height", "ph_label", "ph", "type", "rotation")
+  props <- props[, c("offx", "offy", "cx", "cy", "ph_label", "ph", "type", "fld_id", "fld_type", "rotation")]
+  names(props) <- c("left", "top", "width", "height", "ph_label", "ph", "type", "fld_id", "fld_type", "rotation")
   as_ph_location(props)
 }
 
@@ -35,7 +35,7 @@ as_ph_location <- function(x, ...){
     stop("x should be a data.frame")
   }
   ref_names <- c( "width", "height", "left", "top",
-                  "ph_label", "ph", "type", "rotation")
+                  "ph_label", "ph", "type", "rotation", "fld_id", "fld_type")
   if (!all(is.element(ref_names, names(x) ))) {
     stop("missing column values:", paste0(setdiff(ref_names, names(x)), collapse = ","))
   }
@@ -45,7 +45,7 @@ as_ph_location <- function(x, ...){
 }
 
 #' @export
-#' @title eval a location on the current slide
+#' @title Eval a location on the current slide
 #' @description Eval a shape location against the current slide.
 #' This function is to be used to add custom openxml code. A
 #' list is returned, it contains informations width, height, left
@@ -69,14 +69,16 @@ fortify_location <- function( x, doc, ... ){
 # main ----
 
 #' @export
-#' @title create a location for a placeholder
+#' @title Location for a placeholder from scratch
 #' @description The function will return a list that complies with
-#' expected format for argument \code{location} of function\code{ph_with}.
+#' expected format for argument \code{location} of function \code{ph_with}.
 #' @param left,top,width,height place holder coordinates
 #' in inches.
 #' @param newlabel a label for the placeholder. See section details.
 #' @param bg background color
 #' @param rotation rotation angle
+#' @param ln a [sp_line()] object specifying the outline style.
+#' @param geom shape geometry, see http://www.datypic.com/sc/ooxml/t-a_ST_ShapeType.html
 #' @param ... unused arguments
 #' @family functions for placeholder location
 #' @details
@@ -102,14 +104,23 @@ fortify_location <- function( x, doc, ... ){
 #' doc <- ph_with(doc, "Hello world",
 #'   location = ph_location(width = 4, height = 3, newlabel = "hello") )
 #' print(doc, target = tempfile(fileext = ".pptx") )
+#'
+#' # Set geometry and outline
+#' doc <- read_pptx()
+#' doc <- add_slide(doc)
+#' loc <- ph_location(left = 1, top = 1, width = 4, height = 3, bg = "steelblue",
+#'                    ln = sp_line(color = "red", lwd = 2.5),
+#'                    geom = "trapezoid")
+#' doc <- ph_with(doc, "", loc = loc)
+#' print(doc, target = tempfile(fileext = ".pptx") )
 ph_location <- function(left = 1, top = 1, width = 4, height = 3,
                         newlabel = "",
                         bg = NULL, rotation = NULL,
+                        ln = NULL, geom = NULL,
                         ...){
 
   x <- list(left = left, top = top, width = width, height = height,
-    ph_label = newlabel, ph = NA_character_, bg = bg, rotation = rotation)
-
+    ph_label = newlabel, ph = NA_character_, bg = bg, rotation = rotation, ln = ln, geom = geom, fld_type = NA_character_, fld_id = NA_character_)
 
   class(x) <- c("location_manual", "location_str")
   x
@@ -120,7 +131,7 @@ fortify_location.location_manual <- function( x, doc, ...){
   x
 }
 
-#' @title create a location for a placeholder based on a template
+#' @title Location for a placeholder based on a template
 #' @description The function will return a list that complies with
 #' expected format for argument \code{location} of function
 #' \code{ph_with}. A placeholder will be used as template
@@ -172,7 +183,7 @@ fortify_location.location_template <- function( x, doc, ...){
 }
 
 #' @export
-#' @title location of a placeholder based on a type
+#' @title Location of a placeholder based on a type
 #' @description The function will use the type name of the placeholder (e.g. body, title),
 #' the layout name and few other criterias to find the corresponding location.
 #' @param type placeholder type to look for in the slide layout, one
@@ -193,8 +204,31 @@ fortify_location.location_template <- function( x, doc, ...){
 #' @family functions for placeholder location
 #' @inherit ph_location details
 #' @examples
+#' # ph_location_type demo ----
 #'
-#' @example examples/ph_location_type.R
+#' loc_title <- ph_location_type(type = "title")
+#' loc_footer <- ph_location_type(type = "ftr")
+#' loc_dt <- ph_location_type(type = "dt")
+#' loc_slidenum <- ph_location_type(type = "sldNum")
+#' loc_body <- ph_location_type(type = "body")
+#'
+#'
+#' doc <- read_pptx()
+#' doc <- add_slide(doc)
+#' doc <- ph_with(x = doc, "Un titre", location = loc_title)
+#' doc <- ph_with(x = doc, "pied de page", location = loc_footer)
+#' doc <- ph_with(x = doc, format(Sys.Date()), location = loc_dt)
+#' doc <- ph_with(x = doc, "slide 1", location = loc_slidenum)
+#' doc <- ph_with(x = doc, letters[1:10], location = loc_body)
+#'
+#' loc_subtitle <- ph_location_type(type = "subTitle")
+#' loc_ctrtitle <- ph_location_type(type = "ctrTitle")
+#' doc <- add_slide(doc, layout = "Title Slide", master = "Office Theme")
+#' doc <- ph_with(x = doc, "Un sous titre", location = loc_subtitle)
+#' doc <- ph_with(x = doc, "Un titre", location = loc_ctrtitle)
+#'
+#' fileout <- tempfile(fileext = ".pptx")
+#' print(doc, target = fileout)
 ph_location_type <- function( type = "body", position_right = TRUE, position_top = TRUE, newlabel = NULL, id = NULL, ...){
 
   ph_types <- c("ctrTitle", "subTitle", "dt", "ftr", "sldNum", "title", "body",
@@ -227,7 +261,7 @@ fortify_location.location_type <- function( x, doc, ...){
 }
 
 #' @export
-#' @title location of a named placeholder
+#' @title Location of a named placeholder
 #' @description The function will use the label of a placeholder
 #' to find the corresponding location.
 #' @param ph_label placeholder label of the used layout. It can be read in PowerPoint or
@@ -237,8 +271,22 @@ fortify_location.location_type <- function( x, doc, ...){
 #' @family functions for placeholder location
 #' @inherit ph_location details
 #' @examples
+#' # ph_location_label demo ----
 #'
-#' @example examples/ph_location_label.R
+#' doc <- read_pptx()
+#' doc <- add_slide(doc, layout = "Title and Content")
+#'
+#' # all ph_label can be read here
+#' layout_properties(doc, layout = "Title and Content")
+#'
+#' doc <- ph_with(doc, head(iris),
+#'   location = ph_location_label(ph_label = "Content Placeholder 2") )
+#' doc <- ph_with(doc, format(Sys.Date()),
+#'   location = ph_location_label(ph_label = "Date Placeholder 3") )
+#' doc <- ph_with(doc, "This is a title",
+#'   location = ph_location_label(ph_label = "Title 1") )
+#'
+#' print(doc, target = tempfile(fileext = ".pptx"))
 ph_location_label <- function( ph_label, newlabel = NULL, ...){
   x <- list(ph_label = ph_label, label = newlabel)
   class(x) <- c("location_label", "location_str")
@@ -266,8 +314,8 @@ fortify_location.location_label <- function( x, doc, ...){
          " in the slide layout is duplicated. It needs to be unique.")
   }
 
-  props <- props[, c("offx", "offy", "cx", "cy", "ph_label", "ph", "type", "rotation")]
-  names(props) <- c("left", "top", "width", "height", "ph_label", "ph", "type", "rotation")
+  props <- props[, c("offx", "offy", "cx", "cy", "ph_label", "ph", "type", "rotation", "fld_id", "fld_type")]
+  names(props) <- c("left", "top", "width", "height", "ph_label", "ph", "type", "rotation", "fld_id", "fld_type")
   row.names(props) <- NULL
   out <- as_ph_location(props)
   if( !is.null(x$label) )
@@ -277,7 +325,7 @@ fortify_location.location_label <- function( x, doc, ...){
 }
 
 #' @export
-#' @title location of a full size element
+#' @title Location of a full size element
 #' @description The function will return the location corresponding
 #' to a full size display.
 #' @param newlabel a label to associate with the placeholder.
@@ -306,12 +354,14 @@ fortify_location.location_fullsize <- function( x, doc, ...){
   layout_data$ph <- NA_character_
   layout_data$type <- "body"
   layout_data$rotation <- 0L
+  layout_data$fld_id <- NA_character_
+  layout_data$fld_type <- NA_character_
 
   as_ph_location(as.data.frame(layout_data, stringsAsFactors = FALSE))
 }
 
 #' @export
-#' @title location of a left body element
+#' @title Location of a left body element
 #' @description The function will return the location corresponding
 #' to a left bounding box. The function assume the layout 'Two Content'
 #' is existing. This is an helper function, if you don't have a layout
@@ -350,7 +400,7 @@ fortify_location.location_left <- function( x, doc, ...){
 }
 
 #' @export
-#' @title location of a right body element
+#' @title Location of a right body element
 #' @description The function will return the location corresponding
 #' to a right bounding box. The function assume the layout 'Two Content'
 #' is existing. This is an helper function, if you don't have a layout
