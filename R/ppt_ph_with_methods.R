@@ -434,6 +434,7 @@ ph_with.external_img <- function(x, value, location, use_loc_size = TRUE, ...){
       stop("package 'rsvg' is required to convert svg file to rasters")
     }
 
+    new_svg_src <- value
     file <- tempfile(fileext = ".png")
     rsvg::rsvg_png(as.character(value), file = file)
     value[1] <- file
@@ -442,14 +443,22 @@ ph_with.external_img <- function(x, value, location, use_loc_size = TRUE, ...){
   new_src <- tempfile( fileext = gsub("(.*)(\\.[a-zA-Z0-0]+)$", "\\2", as.character(value)) )
   file.copy( as.character(value), to = new_src )
 
+  if (!exists("new_svg_src")) {
+    new_svg_src <- NULL
+  }
+
   xml_str <- pic_pml(left = location$left, top = location$top,
                        width = width, height = height,
                        label = location$ph_label, ph = location$ph,
                        rot = location$rotation, bg = location$bg,
-                       src = new_src, alt_text = attr(value, "alt"),
+                       src = new_src, svg_src = new_svg_src, alt_text = attr(value, "alt"),
                        ln = location$ln)
 
   slide$reference_img(src = new_src, dir_name = file.path(x$package_dir, "ppt/media"))
+  if (!is.null(new_svg_src)) {
+    slide$reference_img(src = new_svg_src, dir_name = file.path(x$package_dir, "ppt/media"))
+  }
+
   xml_elt <- fortify_pml_images(x, xml_str)
 
   value <- as_xml_document(xml_elt)

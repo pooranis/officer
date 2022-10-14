@@ -783,7 +783,7 @@ as.data.frame.external_img <- function( x, ... ){
 
 pic_pml <- function( left = 0, top = 0, width = 3, height = 3,
                      bg = "transparent", rot = 0, label = "",
-                     ph = "<p:ph/>", src, alt_text = "",
+                     ph = "<p:ph/>", src, svg_src = NULL, alt_text = "",
                      ln = sp_line(lwd = 0, linecmpd = "solid", lineend = "rnd")){
 
   if( !is.null(bg) && !is.color( bg ) )
@@ -799,11 +799,27 @@ pic_pml <- function( left = 0, top = 0, width = 3, height = 3,
   if( is.null(ph) || is.na(ph)){
     ph = "<p:ph/>"
   }
-  blipfill <- paste0(
-    "<p:blipFill>",
-    sprintf("<a:blip cstate=\"print\" r:embed=\"%s\"/>", src),
-    "<a:stretch><a:fillRect/></a:stretch>",
-    "</p:blipFill>")
+  if (!is.null(svg_src)) {
+    blipfill <- paste0(
+      "<p:blipFill>",
+      sprintf("<a:blip cstate=\"print\" r:embed=\"%s\">", src),
+      "<a:extLst>",
+      "<a:ext uri=\"{96DAC541-7B7A-43D3-8B79-37D633B846F1}\">",
+      sprintf("<asvg:svgBlip r:embed=\"%s\" xmlns:asvg=\"http://schemas.microsoft.com/office/drawing/2016/SVG/main\"/>", svg_src),
+      "</a:ext>",
+      "</a:extLst>",
+      "</a:blip>",
+      "<a:stretch><a:fillRect/></a:stretch>",
+      "</p:blipFill>"
+    )
+  } else {
+    blipfill <- paste0(
+      "<p:blipFill>",
+      sprintf("<a:blip cstate=\"print\" r:embed=\"%s\"/>", src),
+      "<a:stretch><a:fillRect/></a:stretch>",
+      "</p:blipFill>")
+  }
+
   str <- "
 <p:pic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\">
   <p:nvPicPr>
